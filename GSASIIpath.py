@@ -223,6 +223,21 @@ def gitLookupHash(repo_path,gittag):
     g2repo = git.Repo(repo_path)
     return g2repo.tag(gittag).commit.hexsha
 
+def gitCheckForUpdates(repo_path):
+    '''WIP: Provides a list of the commits made locally and those made on the server
+
+    :param str repo_path: location where GSAS-II has been installed.
+    :returns: remotecommits, localcommits where remotecommits is a list of hex hash 
+      numbers of remote commits and localcommits is a list of hex hash numbers 
+      of local commits.
+    '''
+    g2repo = git.Repo(repo_path)
+    head = g2repo.head.ref
+    tracking = head.tracking_branch()
+    localcommits = [i.hexsha for i in head.commit.iter_items(g2repo, f'{tracking.path}..{head.path}')]
+    remotecommits = [i.hexsha for i in head.commit.iter_items(g2repo, f'{head.path}..{tracking.path}')]
+    return remotecommits,localcommits
+
 def gitHistory(repo_path,values='tag'):
     '''Provides the history of commits to master, starting from the
     current head, either as tags or hash values
