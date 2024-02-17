@@ -223,20 +223,59 @@ def gitLookupHash(repo_path,gittag):
     g2repo = git.Repo(repo_path)
     return g2repo.tag(gittag).commit.hexsha
 
-def gitCheckForUpdates(repo_path):
-    '''WIP: Provides a list of the commits made locally and those made on the server
+def gitTestGSASII(repo_path,verbose=True):
+    '''Test a the status of a GSAS-II installation
+
+    :param str repo_path: location where GSAS-II has been installed
+    :returns: istat, with the status of the repository, with one of the 
+      following values:
+
+       * -1: path is not found
+       * -2: no git repository at path
+       * -3: unable to access repository
+       * -4: repository has local changes (uncommitted)
+       *  0: no problems noted
+    '''
+    if not os.path.exists(repo_path): 
+        if verbose: print(f'Warning: Directory {repo_path} not found')
+        return -1
+    if not os.path.exists(os.path.join(repo_path,'.git')): 
+        if verbose: print(f'Warning: Repository {repo_path} not found')
+        return -2
+    try:
+        g2repo = git.Repo(repo_path)
+    except Exception as msg:
+        if verbose: print(f'Warning: Failed to open repository. Error: {msg}')
+        return -3
+    if g2repo.is_dirty(): return -4
+    return 0
+
+def gitCheckForUpdates(repo_path,fetch=True):
+    '''Provides a list of the commits made locally and those in the local copy of the repo
+    without an update
 
     :param str repo_path: location where GSAS-II has been installed.
-    :returns: remotecommits, localcommits where remotecommits is a list of hex hash 
-      numbers of remote commits and localcommits is a list of hex hash numbers 
-      of local commits.
+    :param bool fetch: if True (default), updates are copied over from
+      the remote repository (git fetch), before checking for changes.
+    :returns: (remotecommits, localcommits, fetched) where 
+       * remotecommits is a list of hex hash numbers of remote commits and 
+       * localcommits is a list of hex hash numbers of local commits and
+       * fetched is a bool that will be True if the update (fetch)
+         step ran successfully
     '''
+    fetched = False
     g2repo = git.Repo(repo_path)
+    if fetch:
+        try:
+            g2repo.remote().fetch()
+            fetched = True
+        except git.GitCommandError as msg:
+            print(f'Failed to get updates from {g2repo.remote().url}')
     head = g2repo.head.ref
     tracking = head.tracking_branch()
     localcommits = [i.hexsha for i in head.commit.iter_items(g2repo, f'{tracking.path}..{head.path}')]
     remotecommits = [i.hexsha for i in head.commit.iter_items(g2repo, f'{head.path}..{tracking.path}')]
-    return remotecommits,localcommits
+    return remotecommits,localcommits,fetched
 
 def gitHistory(repo_path,values='tag'):
     '''Provides the history of commits to master, starting from the
@@ -1333,7 +1372,7 @@ def TestSPG(fpth):
         pyspg.sgforpy('P -1')
     except Exception as err:
         print(70*'=')
-        print('Failed to run pyspg in {}\nerror: {}'.format(fpth,err))
+        print(f'Failed to run pyspg in {fpth!r}\nerror: {err}')
         print(70*'=')
         sys.path = savpath
         return False
