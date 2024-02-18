@@ -23,8 +23,9 @@ except ImportError:
     print("skipping numpy in GSASIIpath")
 try:
     import git
+    import requests
 except:
-    print('Note, git package not found')
+    print('Note, git or requests package not found')
     
 path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__))) # location of this file; save before any changes in pwd
 
@@ -167,6 +168,9 @@ def GetBinaryPrefix(pyver=None):
 
     return '_'.join([prefix,bits,pyver])
 
+#==============================================================================
+#==============================================================================
+# hybrid routines that use git & svn (to be revised to remove svn someday)
 def HowIsG2Installed():
     '''Determines if GSAS-II was installed with git, svn or none of the above
 
@@ -322,7 +326,7 @@ def gitResetGSASII(repo_path,verbose=True):
         if verbose: print(f'Warning: Repository {repo_path} not found')
         return False
 
-def getBinaryReleases():
+def getGitBinaryReleases():
     '''Retrieves the binaries and download urls of the latest release
 
     :returns: a URL dict for GSAS-II binary distributions found in the newest 
@@ -359,19 +363,26 @@ def getBinaryReleases():
 
     return dict(zip(versions,URLs))
 
-def GetGitBinaryLoc(verbose=True):
+def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
     '''Identify the best GSAS-II binary download location from the 
     distributions in the latest release section of the github repository 
     on the CPU platform, and Python & numpy versions. The CPU & Python
     versions must match, but the numpy version may only be close.
     
+    :param str npver: Version number to use for numpy, if None (default)
+      the version is taken from numpy in the current Python interpreter.
+    :param str pyver: Version number to use for Python, if None (default)
+      the version is taken from the current Python interpreter.
     :param bool verbose: if True (default), status messages are printed
     :returns: a URL for the tar file (success) or None (failure)
     '''    
-    bindir = GetBinaryPrefix()
-    inpver = intver(np.__version__)
+    bindir = GetBinaryPrefix(pyver)
+    if npver:
+        inpver = npver
+    else:
+        inpver = intver(np.__version__)
     # get binaries matching the required install, approximate match for numpy
-    URLdict = getBinaryReleases()
+    URLdict = getGitBinaryReleases()
     versions = {}
     for d in URLdict:
         if d.startswith(bindir):
@@ -409,13 +420,18 @@ def GetGitBinaryLoc(verbose=True):
                 break
     return URLdict[versions[vsel]]
 
-def InstallGitBinary(tarURL, instDir, verbose=True):
+def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
     '''Install the GSAS-II binary files into the location
     specified. 
     
     :param str tarURL: a URL for the tar file.
     :param str instDir: location directory to install files. This directory
         may not exist and will be created if needed.
+    :param bool nameByVersion: if True, files are put into a subdirectory
+        of `instDir`, named to match the tar file (with plaform, Python & 
+        numpy versions). 
+        Default is False, where the binary files are put directly into 
+        `instDir`.
     :param bool verbose: if True (default), status messages are printed.
     :returns: None
     '''
@@ -432,17 +448,22 @@ def InstallGitBinary(tarURL, instDir, verbose=True):
         open(tar.name, 'wb').write(r.content)
         # open in tar
         tarobj = tarfile.open(name=tar.name)
+        if nameByVersion:
+            binnam = os.path.splitext(os.path.split(tarURL)[1])[0]
+            install2dir = os.path.join(instDir,binnam)
+        else:
+            install2dir = instDir
         for f in tarobj.getmembers(): # loop over files in repository
-            # do a bit of sanity checking. Don't install anything unless
-            # it goes into in the specified directory
+            # do a bit of sanity checking for safety. Don't install anything
+            #  unless it goes into in the specified directory
             if '/' in f.name or '\\' in f.name:
                 print(f'skipping file {f.name} -- path alteration not allowed')
                 continue
             if f.name != os.path.basename(f.name):
                 print(f'skipping file {f.name} -- how did this happen?')
                 continue
-            newfil = os.path.normpath(os.path.join(instDir,f.name))
-            tarobj.extract(f, path=instDir, set_attrs=False)
+            newfil = os.path.normpath(os.path.join(install2dir,f.name))
+            tarobj.extract(f, path=install2dir, set_attrs=False)
             # set file mode and mod/access times (but not ownership)
             os.chmod(newfil,f.mode)
             os.utime(newfil,(f.mtime,f.mtime))
@@ -1379,12 +1400,23 @@ def TestSPG(fpth):
     sys.path = savpath
     return True
     
-def SetBinaryPath(printInfo=False, loadBinary=True):
+def SetBinaryPath(printInfo=False, loadBinary=False):
     '''
-    Add location of GSAS-II shared libraries (binaries: .so or .pyd files) to path
+    Add location of GSAS-II shared libraries (binaries: .so or 
+    .pyd files) to path
     
-    This routine must be executed after GSASIIpath is imported and before any other
-    GSAS-II imports are done.
+    This routine must be executed after GSASIIpath is imported 
+    and before any other GSAS-II imports are done, since 
+    they assume binary files are in path
+
+    :param bool printInfo: When True, information is printed to show
+      has happened (default is False)
+    :param bool loadBinary: when True, if the binary files fail
+      to load, an attempt is made to download the binaries
+      (default is False).
+
+      TODO: this is not implemented at present and is not used in 
+      any of the calls to SetBinaryPath
     '''
     # do this only once no matter how many times it is called
     global BinaryPathLoaded,binaryPath
@@ -1397,19 +1429,33 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
         sys.path.insert(0,path2GSAS2)  # make sure current path is used
     binpath = None
     binprfx = GetBinaryPrefix()
-    for loc in (os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]),
-               os.path.expanduser('~/.GSASII')):
+    # places to look for the GSAS-II binary directory
+    binseapath = [os.path.abspath(sys.path[0])]  # where Python is installed
+    binseapath += [os.path.abspath(os.path.dirname(__file__))]  # directory where this file is found
+    binseapath += [os.path.dirname(binseapath[-1])]  # parent of above directory
+    binseapath += [os.path.expanduser('~/.GSASII')]       # directory in user's home
+    def appendIfExists(searchpathlist,loc,subdir):
+        newpath = os.path.join(loc,subdir)
+        if os.path.exists(newpath):
+            if newpath in searchpathlist: return
+            searchpathlist.append(newpath)
+    for loc in binseapath:
         # Look at bin directory (created by a local compile) before looking for standard dist files
-        searchpathlist = [os.path.join(loc,'bin')]
-        # also look for matching binary dist in loc/AllBinaries
+        searchpathlist = []
+        appendIfExists(searchpathlist,loc,'bin')
+        appendIfExists(searchpathlist,loc,'bindist')
+        appendIfExists(searchpathlist,loc,'GSASII-bin')
+        # also look for directories named by platform etc in loc/AllBinaries or loc
         versions = {}
-        for d in glob.glob(os.path.join(loc,'AllBinaries',binprfx+'*')):
+        namedpath =  glob.glob(os.path.join(loc,'AllBinaries',binprfx+'*'))
+        namedpath += glob.glob(os.path.join(loc,'GSASII-bin',binprfx+'*'))
+        for d in namedpath:
             d = os.path.realpath(d)
             v = intver(d.rstrip('/').split('_')[-1].lstrip('n'))
             versions[v] = d
-        searchpathlist = [os.path.join(loc,'bin')]
         vmin = None
         vmax = None
+        # try to order the search in a way that makes sense
         for v in sorted(versions.keys()):
             if v <= inpver:
                 vmin = v
@@ -1420,43 +1466,45 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
             searchpathlist.append(versions[vmin])
         if vmax in versions:
             searchpathlist.append(versions[vmax])
-        searchpathlist.append(os.path.join(loc,'bindist'))
         for fpth in searchpathlist:
             if TestSPG(fpth):
-                binpath = fpth
-                break        
-        if binpath: break
-    if binpath:                                            # were GSAS-II binaries found
-        sys.path.insert(0,binpath)
+                binpath = fpth   # got one that works, look no farther!
+                break
+        else:
+            continue
+        break
+    if binpath:  # were GSAS-II binaries found?
         binaryPath = binpath
-        if printInfo:
-            print('GSAS-II binary directory: {}'.format(binpath))
         BinaryPathLoaded = True
     elif not loadBinary:
-        raise Exception
+        raise Exception('*** ERROR: Unable to find GSAS-II binaries. Cannot continue')
     else:                                                  # try loading them 
-        if printInfo:
-            print('Attempting to download GSAS-II binary files...')
-        try:
-            binpath = DownloadG2Binaries(g2home)
-        except AttributeError:   # this happens when building in Read The Docs
-            if printInfo:
-                print('Problem with download')
-        if binpath and TestSPG(binpath):
-            if printInfo:
-                print('GSAS-II binary directory: {}'.format(binpath))
-            sys.path.insert(0,binpath)
-            binaryPath = binpath
-            BinaryPathLoaded = True
-        # this must be imported before anything that imports any .pyd/.so file for GSASII
-        else:
-            if printInfo:
-                print(75*'*')
-                print('Use of GSAS-II binary directory {} failed!'.format(binpath))
-                print(75*'*')
-            raise Exception("**** ERROR GSAS-II binary libraries not found, GSAS-II cannot run ****")
+        raise Exception("**** ERROR GSAS-II binary libraries not found and loadBinary not"+
+                        "\nimplemented in SetBinaryPath, GSAS-II cannot run ****""")
+        # if printInfo:
+        #     print('Attempting to download GSAS-II binary files...')
+        # try:
+        #     binpath = DownloadG2Binaries(g2home)
+        # except AttributeError:   # this happens when building in Read The Docs
+        #     if printInfo:
+        #         print('Problem with download')
+        # if binpath and TestSPG(binpath):
+        #     if printInfo:
+        #         print('GSAS-II binary directory: {}'.format(binpath))
+        #     sys.path.insert(0,binpath)
+        #     binaryPath = binpath
+        #     BinaryPathLoaded = True
+        # # this must be imported before anything that imports any .pyd/.so file for GSASII
+        # else:
+        #     if printInfo:
+        #         print(75*'*')
+        #         print('Use of GSAS-II binary directory {} failed!'.format(binpath))
+        #         print(75*'*')
+        #     raise Exception("**** ERROR GSAS-II binary libraries not found, GSAS-II cannot run ****")
 
     # add the data import and export directory to the search path
+    if binpath not in sys.path: sys.path.insert(0,binpath)
+    if printInfo: print(f'GSAS-II binary directory: {binpath}')
     newpath = os.path.join(path2GSAS2,'imports')
     if newpath not in sys.path: sys.path.append(newpath)
     newpath = os.path.join(path2GSAS2,'exports')
