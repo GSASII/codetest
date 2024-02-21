@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIctrlGUI - Custom GSAS-II GUI controls
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2024-02-21 16:48:22 -0600 (Wed, 21 Feb 2024) $
+# $Author: toby $
+# $Revision: 5736 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIctrlGUI.py $
+# $Id: GSASIIctrlGUI.py 5736 2024-02-21 22:48:22Z toby $
 ########### SVN repository information ###################
 '''Documentation for all the routines in module :mod:`GSASIIctrlGUI`
 follows.
@@ -47,7 +47,7 @@ except ImportError:
     from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5736 $")
 import GSASIIdataGUI as G2gd
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
@@ -2902,8 +2902,34 @@ class SingleIntDialog(SingleFloatDialog):
 
 ################################################################################
 class MultiDataDialog(wx.Dialog):
-    'Dialog to obtain multiple values from user'
-    def __init__(self,parent,title,prompts,values,limits=[[0.,1.],],formats=['%.5g',]):
+    '''Dialog to obtain multiple values from user
+
+    :param wx.Frame parent: parent frame for dialog to be created
+    :param str title: title to place on top of window
+    :param list prompts: a string to describe each item
+    :param list values: a set of initial values for each item
+    :param list limits: A nested list with an upper and lower value 
+       for each item
+    :param list format: an "old-style" format string used to display 
+       each item value
+    :param str header: a string to be placed at the top of the 
+       window, if specified
+
+    example::
+
+        dlg = G2G.MultiDataDialog(G2frame,title='ISOCIF search',
+                prompts=['lattice constants tolerance',
+                         'coordinate tolerance',
+                         'occupancy tolerance'],
+                values=[0.001,0.01,0.1],
+                limits=3*[[0.,2.]],formats=3*['%.5g'],
+                header=isoCite)
+        dlg.ShowModal()
+        latTol,coordTol,occTol = dlg.GetValues()
+        dlg.Destroy()
+'''
+    def __init__(self,parent,title,prompts,values,limits=[[0.,1.],],
+                     formats=['%.5g',],header=None):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = None
@@ -2911,6 +2937,7 @@ class MultiDataDialog(wx.Dialog):
         self.values = values
         self.prompts = prompts
         self.formats = formats
+        self.header = header
         self.Draw()
         
     def Draw(self):
@@ -2951,6 +2978,13 @@ class MultiDataDialog(wx.Dialog):
         if self.panel: self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
+        if self.header:
+            txt = wx.StaticText(self.panel,wx.ID_ANY,self.header)
+            txt.Wrap(400)
+            mainSizer.Add(txt)
+            mainSizer.Add((-1,5))
+            HorizontalLine(mainSizer,self.panel)
+            mainSizer.Add((-1,5))
         lineSizer = wx.FlexGridSizer(0,2,5,5)
         for tid,[prompt,value,limits,fmt] in enumerate(zip(self.prompts,self.values,self.limits,self.formats)):
             lineSizer.Add(wx.StaticText(self.panel,label=prompt),0,wx.ALIGN_CENTER)
@@ -2995,6 +3029,7 @@ class MultiDataDialog(wx.Dialog):
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add((20,20),1)
         btnSizer.Add(OkBtn)
+        OkBtn.SetDefault()
         btnSizer.Add(CancelBtn)
         btnSizer.Add((20,20),1)
         mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
@@ -5358,7 +5393,7 @@ class MyHelp(wx.Menu):
         self.Append(wx.ID_ABOUT,'&About GSAS-II',
                         'Shows version and citation info')
         frame.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wx.ID_ABOUT)
-        if GSASIIpath.whichsvn():
+        if GSASIIpath.HowIsG2Installed():
             helpobj = self.Append(wx.ID_ANY,'&Check for updates\tCtrl+U',
                     'Updates to latest GSAS-II version')
             if os.access(GSASIIpath.path2GSAS2, os.W_OK):
@@ -5426,10 +5461,7 @@ class MyHelp(wx.Menu):
             wxadv = wx
         info = wxadv.AboutDialogInfo()
         info.Name = 'GSAS-II'
-        ver = GSASIIpath.svnGetRev()
-        if not ver:
-            ver = GSASIIpath.GetVersionNumber()
-        info.SetVersion(ver)
+        info.SetVersion(GSASIIpath.getG2VersionInfo())
         #info.Developers = ['Robert B. Von Dreele','Brian H. Toby']
         info.Copyright = ('(c) ' + time.strftime('%Y') +
 ''' Argonne National Laboratory
@@ -5454,226 +5486,34 @@ For DIFFaX use cite:
         '''Check if the GSAS-II repository has an update for the current source files
         and perform that update if requested.
         '''
-        if not GSASIIpath.whichsvn():
-            dlg = wx.MessageDialog(self.frame,
-                                   'No Subversion','Cannot update GSAS-II because subversion (svn) was not found.',
-                                   wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        wx.BeginBusyCursor()
-        local = GSASIIpath.svnGetRev()
-        if local is None: 
-            wx.EndBusyCursor()
-            dlg = wx.MessageDialog(self.frame,
-                                   'Unable to run subversion on the GSAS-II current directory. Is GSAS-II installed correctly?',
-                                   'Subversion error',
-                                   wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        print ('Installed GSAS-II version: '+local)
-        repos = GSASIIpath.svnGetRev(local=False)
-        wx.EndBusyCursor()
-        # has the current branch disappeared? If so, switch to the trunk -- not fully tested
-        if (repos is None and "not found" in GSASIIpath.svnLastError.lower()
-            and "path" in GSASIIpath.svnLastError.lower()):
-            print('Repository is gone, will switch to trunk')
-            GSASIIpath.svnSwitch2branch()
-            return
-        elif repos is None: 
-            dlg = wx.MessageDialog(self.frame,
-                                   'Unable to access the GSAS-II server. Is this computer on the internet?',
-                                   'Server unavailable',
-                                   wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        errmsg,warnmsg = G2gd.TestOldVersions()
-        if (errmsg or warnmsg):
-            msg = 'Based on the age of Python or an installed Python package (see below)'
-            msg += ' you are recommended to'
-            if GSASIIpath.condaTest():
-                msg += ' either use conda to update (see https://bit.ly/G2pkgs for version recommendations) and then update GSAS-II. Or'
-            msg += ' reinstall GSAS-II (see https://bit.ly/G2install), which will update both.\n\n'
-            if errmsg:
-                opt = wx.YES_NO|wx.ICON_QUESTION|wx.CANCEL|wx.NO_DEFAULT
-                msg += 'Error(s):\n\t'+errmsg
-            else:
-                opt = wx.YES_NO|wx.ICON_QUESTION|wx.CANCEL|wx.YES_DEFAULT
-            if warnmsg:
-                if errmsg: msg += '\n\nWarning(s):\n\t'
-                msg += warnmsg
-
-            msg += '\n\nContinue to update GSAS-II?'
-            dlg = wx.MessageDialog(self.frame, msg,'Confirm update',opt)
-            result = wx.ID_NO
-            try:
-                result = dlg.ShowModal()
-            finally:
-                dlg.Destroy()
-            if result != wx.ID_YES: return
-        print ('GSAS-II version on server: '+repos)
-        if local == repos:
-            up,mod,lock = GSASIIpath.svnGetFileStatus()
-        else:
-            up = 0
-            mods = GSASIIpath.svnFindLocalChanges()
-            mod = len(mods)
-        if local == repos and up:
-            dlg = wx.MessageDialog(self.frame,
-                                   'You have the current version '+
-                                   ' of GSAS-II installed ('+repos+
-                                   '). However, '+str(up)+
-                                   ' file(s) still need to be updated.'+
-                                   ' Most likely a previous update failed to finish.'+
-                                   '\n\nPress OK to retry the update.'+
-                                   '\n\nIf this problem continues contact toby@anl.gov',
-                                   'Failed Update Likely',
-                                   wx.OK|wx.CANCEL)
-            if dlg.ShowModal() != wx.ID_OK:
-                dlg.Destroy()
-                return
-            else:
-                dlg.Destroy()
-            if lock: GSASIIpath.svnCleanup()
-        elif local == repos:
-            dlg = wx.MessageDialog(self.frame,
-                                   'GSAS-II is up-to-date. Version '+local+' is already loaded.',
-                                   'GSAS-II Up-to-date',
-                                   wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        if mod:
-            dlg = wx.MessageDialog(self.frame,
-                                   'You have version '+local+
-                                   ' of GSAS-II installed, but the current version is '+repos+
-                                   '. However, '+str(mod)+
-                                   ' file(s) on your local computer have been modified.'
-                                   ' Updating will attempt to merge your local changes with '
-                                   'the latest GSAS-II version, but if '
-                                   'conflicts arise, local changes will be '
-                                   'discarded. It is also possible that the '
-                                   'merge may prevent GSAS-II from running. '
-                                   '\n\nPress OK to start an update if this is acceptable:',
-                                   'Local GSAS-II Mods',
-                                   wx.OK|wx.CANCEL)
-            if dlg.ShowModal() != wx.ID_OK:
-                dlg.Destroy()
-                return
-            else:
-                dlg.Destroy()
+        if GSASIIpath.HowIsG2Installed().startswith('git'):
+            print('not implemented')
+            gitCheckUpdates(self.frame)
+        elif GSASIIpath.HowIsG2Installed().startswith('svn'):
+            svnCheckUpdates(self.frame)
         else:
             dlg = wx.MessageDialog(self.frame,
-                                   'You have version '+local+
-                                   ' of GSAS-II installed, but the current version is '+repos+
-                                   '. Press OK to start an update:',
-                                   'GSAS-II Updates',
-                                   wx.OK|wx.CANCEL)
-            if dlg.ShowModal() != wx.ID_OK:
-                dlg.Destroy()
-                return
-            dlg.Destroy()
-        print ('start updates')
-        if self.frame.GPXtree.GetCount() > 1:
-            dlg = wx.MessageDialog(self.frame,
-                               'Your project will now be saved, GSAS-II will exit and an update '+
-                               'will be performed and GSAS-II will restart. Press Cancel '+
-                               'in next dialog to avoid saving the project.',
-                               'Starting update',
-                               wx.OK)
+                                   'No VCS','Cannot update GSAS-II because it was not installed with a version control system or the VCS system could not be accessed.',
+                                   wx.OK)
             dlg.ShowModal()
             dlg.Destroy()
-            self.frame.OnFileSave(event)
-            GPX = self.frame.GSASprojectfile
-            GSASIIpath.svnUpdateProcess(projectfile=GPX)
-        else:
-            GSASIIpath.svnUpdateProcess()
-        return
+            return
 
     def OnSelectVersion(self,event):
         '''Allow the user to select a specific version of GSAS-II
         '''
-        if not GSASIIpath.whichsvn():
-            dlg = wx.MessageDialog(self,'No Subversion','Cannot update GSAS-II because subversion (svn) '+
-                                   'was not found.'
-                                   ,wx.OK)
-            dlg.ShowModal()
-            return
-        local = GSASIIpath.svnGetRev()
-        if local is None: 
-            dlg = wx.MessageDialog(self.frame,
-                                   'Unable to run subversion on the GSAS-II current directory. Is GSAS-II installed correctly?',
-                                   'Subversion error',
-                                   wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        mods = GSASIIpath.svnFindLocalChanges()
-        if mods:
-            dlg = wx.MessageDialog(self.frame,
-                                   'You have version '+local+
-                                   ' of GSAS-II installed'
-                                   '. However, '+str(len(mods))+
-                                   ' file(s) on your local computer have been modified.'
-                                   ' Downdating will attempt to merge your local changes with '
-                                   'the selected GSAS-II version. '
-                                   'Downdating is not encouraged because '
-                                   'if merging is not possible, your local changes will be '
-                                   'discarded. It is also possible that the '
-                                   'merge may prevent GSAS-II from running. '
-                                   'Press OK to continue anyway.',
-                                   'Local GSAS-II Mods',
-                                   wx.OK|wx.CANCEL)
-            if dlg.ShowModal() != wx.ID_OK:
-                dlg.Destroy()
-                return
-            dlg.Destroy()
-        if GSASIIpath.svnGetRev(local=False) is None:
-            dlg = wx.MessageDialog(self.frame,
-                                   'Error obtaining current GSAS-II version. Is internet access working correctly?',
-                                   'Subversion error',
-                                   wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        dlg = downdate(parent=self.frame)
-        if dlg.ShowModal() == wx.ID_OK:
-            ver = dlg.getVersion()
+        if GSASIIpath.HowIsG2Installed().startswith('git'):
+            print('not implemented')
+            gitSelectVersion(self.frame)
+        elif GSASIIpath.HowIsG2Installed().startswith('svn'):
+            svnSelectVersion(self.frame)
         else:
+            dlg = wx.MessageDialog(self.frame,
+                                   'No VCS','Cannot update GSAS-II because it was not installed with a version control system or the VCS system could not be accessed.',
+                                   wx.OK)
+            dlg.ShowModal()
             dlg.Destroy()
             return
-        dlg.Destroy()
-        print('start regress to '+str(ver))
-        self.frame.OnFileSave(event)
-        GPX = self.frame.GSASprojectfile
-        GSASIIpath.svnUpdateProcess(projectfile=GPX,version=str(ver))
-        return
-
-    # def OnSelectBranch(self,event):
-    #     '''Allow the user to select branch of GSAS-II or return to trunk
-    #     N.B. Name of branch to use is hard-coded here. Must contain a slash
-    #     '''
-    #     testbranch = '/branch/2frame'
-    #     if not GSASIIpath.svnTestBranch():
-    #         dlg = wx.MessageDialog(self.frame,
-    #                                'Switching to test GSAS-II version',
-    #                                'Confirm Switch',
-    #                                wx.OK|wx.CANCEL)
-    #         if dlg.ShowModal() != wx.ID_OK: return
-    #         branch = testbranch
-    #     else:
-    #         dlg = wx.MessageDialog(self.frame,
-    #                                'Switching back to standard GSAS-II version',
-    #                                'Confirm Switch',
-    #                                wx.OK|wx.CANCEL)
-    #         if dlg.ShowModal() != wx.ID_OK: return
-    #         branch = 'trunk'
-    #     print('start switch')
-    #     self.frame.OnFileSave(event)
-    #     GPX = self.frame.GSASprojectfile
-    #     GSASIIpath.svnUpdateProcess(projectfile=GPX,branch=branch)
 
 ################################################################################
 class HelpButton(wx.Button):
@@ -9082,7 +8922,200 @@ class ScrolledStaticText(wx.StaticText):
             self.timer.Stop()
         self.msgpos += 1
         if self.msgpos >= len(self.fullmsg): self.msgpos = 0
-        
+
+def gitCheckUpdates(G2frame): pass
+    
+def svnCheckUpdates(G2frame):
+    '''Check if the GSAS-II repository has an update for the current 
+    source files and perform that update if requested.
+    '''
+    wx.BeginBusyCursor()
+    local = GSASIIpath.svnGetRev()
+    if local is None: 
+        wx.EndBusyCursor()
+        dlg = wx.MessageDialog(G2frame,
+                               'Unable to run subversion on the GSAS-II current directory. Is GSAS-II installed correctly?',
+                               'Subversion error',
+                               wx.OK)
+        dlg.ShowModal()
+        dlg.Destroy()
+        return
+    print ('Installed GSAS-II version: '+local)
+    repos = GSASIIpath.svnGetRev(local=False)
+    wx.EndBusyCursor()
+    # has the current branch disappeared? If so, switch to the trunk -- not fully tested
+    if (repos is None and "not found" in GSASIIpath.svnLastError.lower()
+        and "path" in GSASIIpath.svnLastError.lower()):
+        print('Repository is gone, will switch to trunk')
+        GSASIIpath.svnSwitch2branch()
+        return
+    elif repos is None: 
+        dlg = wx.MessageDialog(G2frame,
+                               'Unable to access the GSAS-II server. Is this computer on the internet?',
+                               'Server unavailable',
+                               wx.OK)
+        dlg.ShowModal()
+        dlg.Destroy()
+        return
+    errmsg,warnmsg = G2gd.TestOldVersions()
+    if (errmsg or warnmsg):
+        msg = 'Based on the age of Python or an installed Python package (see below)'
+        msg += ' you are recommended to'
+        if GSASIIpath.condaTest():
+            msg += ' either use conda to update (see https://bit.ly/G2pkgs for version recommendations) and then update GSAS-II. Or'
+        msg += ' reinstall GSAS-II (see https://bit.ly/G2install), which will update both.\n\n'
+        if errmsg:
+            opt = wx.YES_NO|wx.ICON_QUESTION|wx.CANCEL|wx.NO_DEFAULT
+            msg += 'Error(s):\n\t'+errmsg
+        else:
+            opt = wx.YES_NO|wx.ICON_QUESTION|wx.CANCEL|wx.YES_DEFAULT
+        if warnmsg:
+            if errmsg: msg += '\n\nWarning(s):\n\t'
+            msg += warnmsg
+
+        msg += '\n\nContinue to update GSAS-II?'
+        dlg = wx.MessageDialog(G2frame, msg,'Confirm update',opt)
+        result = wx.ID_NO
+        try:
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        if result != wx.ID_YES: return
+    print ('GSAS-II version on server: '+repos)
+    if local == repos:
+        up,mod,lock = GSASIIpath.svnGetFileStatus()
+    else:
+        up = 0
+        mods = GSASIIpath.svnFindLocalChanges()
+        mod = len(mods)
+    if local == repos and up:
+        dlg = wx.MessageDialog(G2frame,
+                               'You have the current version '+
+                               ' of GSAS-II installed ('+repos+
+                               '). However, '+str(up)+
+                               ' file(s) still need to be updated.'+
+                               ' Most likely a previous update failed to finish.'+
+                               '\n\nPress OK to retry the update.'+
+                               '\n\nIf this problem continues contact toby@anl.gov',
+                               'Failed Update Likely',
+                               wx.OK|wx.CANCEL)
+        if dlg.ShowModal() != wx.ID_OK:
+            dlg.Destroy()
+            return
+        else:
+            dlg.Destroy()
+        if lock: GSASIIpath.svnCleanup()
+    elif local == repos:
+        dlg = wx.MessageDialog(G2frame,
+                               'GSAS-II is up-to-date. Version '+local+' is already loaded.',
+                               'GSAS-II Up-to-date',
+                               wx.OK)
+        dlg.ShowModal()
+        dlg.Destroy()
+        return
+    if mod:
+        dlg = wx.MessageDialog(G2frame,
+                               'You have version '+local+
+                               ' of GSAS-II installed, but the current version is '+repos+
+                               '. However, '+str(mod)+
+                               ' file(s) on your local computer have been modified.'
+                               ' Updating will attempt to merge your local changes with '
+                               'the latest GSAS-II version, but if '
+                               'conflicts arise, local changes will be '
+                               'discarded. It is also possible that the '
+                               'merge may prevent GSAS-II from running. '
+                               '\n\nPress OK to start an update if this is acceptable:',
+                               'Local GSAS-II Mods',
+                               wx.OK|wx.CANCEL)
+        if dlg.ShowModal() != wx.ID_OK:
+            dlg.Destroy()
+            return
+        else:
+            dlg.Destroy()
+    else:
+        dlg = wx.MessageDialog(G2frame,
+                               'You have version '+local+
+                               ' of GSAS-II installed, but the current version is '+repos+
+                               '. Press OK to start an update:',
+                               'GSAS-II Updates',
+                               wx.OK|wx.CANCEL)
+        if dlg.ShowModal() != wx.ID_OK:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+    print ('start updates')
+    if G2frame.GPXtree.GetCount() > 1:
+        dlg = wx.MessageDialog(G2frame,
+                           'Your project will now be saved, GSAS-II will exit and an update '+
+                           'will be performed and GSAS-II will restart. Press Cancel '+
+                           'in next dialog to avoid saving the project.',
+                           'Starting update',
+                           wx.OK)
+        dlg.ShowModal()
+        dlg.Destroy()
+        G2frame.OnFileSave(None)
+        GPX = G2frame.GSASprojectfile
+        GSASIIpath.svnUpdateProcess(projectfile=GPX)
+    else:
+        GSASIIpath.svnUpdateProcess()
+    return
+
+def gitSelectVersion(G2frame): pass
+
+def svnSelectVersion(G2frame):
+    '''Allow the user to select a specific version of GSAS-II from the 
+    APS svn server
+    '''    
+    local = GSASIIpath.svnGetRev()
+    if local is None:
+        dlg = wx.MessageDialog(G2frame,
+                               'Unable to run subversion on the GSAS-II current directory. Is GSAS-II installed correctly?',
+                               'Subversion error',
+                               wx.OK)
+        dlg.ShowModal()
+        dlg.Destroy()
+        return
+    mods = GSASIIpath.svnFindLocalChanges()
+    if mods:
+        dlg = wx.MessageDialog(G2frame,
+                               'You have version '+local+
+                               ' of GSAS-II installed'
+                               '. However, '+str(len(mods))+
+                               ' file(s) on your local computer have been modified.'
+                               ' Downdating will attempt to merge your local changes with '
+                               'the selected GSAS-II version. '
+                               'Downdating is not encouraged because '
+                               'if merging is not possible, your local changes will be '
+                               'discarded. It is also possible that the '
+                               'merge may prevent GSAS-II from running. '
+                               'Press OK to continue anyway.',
+                               'Local GSAS-II Mods',
+                               wx.OK|wx.CANCEL)
+        if dlg.ShowModal() != wx.ID_OK:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+    if GSASIIpath.svnGetRev(local=False) is None:
+        dlg = wx.MessageDialog(G2frame,
+                               'Error obtaining current GSAS-II version. Is internet access working correctly?',
+                               'Subversion error',
+                               wx.OK)
+        dlg.ShowModal()
+        dlg.Destroy()
+        return
+    dlg = downdate(parent=G2frame)
+    if dlg.ShowModal() == wx.ID_OK:
+        ver = dlg.getVersion()
+    else:
+        dlg.Destroy()
+        return
+    dlg.Destroy()
+    print('start regress to '+str(ver))
+    G2frame.OnFileSave(None)
+    GPX = G2frame.GSASprojectfile
+    GSASIIpath.svnUpdateProcess(projectfile=GPX,version=str(ver))
+    return
+
 if __name__ == '__main__':
     app = wx.App()
     GSASIIpath.InvokeDebugOpts()

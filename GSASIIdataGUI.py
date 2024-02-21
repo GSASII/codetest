@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIdataGUI - Main GUI routines
 #========== SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2024-02-18 21:36:33 -0600 (Sun, 18 Feb 2024) $
+# $Author: toby $
+# $Revision: 5733 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIdataGUI.py $
+# $Id: GSASIIdataGUI.py 5733 2024-02-19 03:36:33Z toby $
 #=========- SVN repository information ###################
 '''
 Routines for main GUI wx.Frame follow. 
@@ -58,7 +58,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5733 $")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
 import GSASIIfiles as G2fil
@@ -409,7 +409,7 @@ versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
 'versions of modules that are known to have bugs'
 versionDict['tooNewWarn'] = {} 
 'module versions newer than what we have tested & where problems are suspected'
-versionDict['tooNewUntested'] = {'Python':'3.11','wx': '4.2.1'}  # still catching up to wx4.2.0
+versionDict['tooNewUntested'] = {'Python':'3.12','wx': '4.2.2'}
 'module versions newer than what we have tested but no problems are suspected'
 
 def ShowVersions():
@@ -499,23 +499,8 @@ def ShowVersions():
         print ("  Max threads:%s"%mkl.get_max_threads())
     except:
         pass
-    rev = GSASIIpath.svnGetRev()
-    if rev is None: 
-        "no SVN"
-    else:
-        rev = "SVN version {}".format(rev)
-    print ("Latest GSAS-II revision (from .py files): {} ({})".format(
-        GSASIIpath.GetVersionNumber(),rev))
-    # patch 11/2020: warn if GSASII path has not been updated past v4576.
-    # For unknown reasons on Mac with gsas2full, there have been checksum
-    # errors in the .so files that prevented svn from completing updates.
-    # If GSASIIpath.svnChecksumPatch is not present, then the fix for that
-    # has not been retrieved, so warn. Keep for a year or so. 
-    try:
-        GSASIIpath.svnChecksumPatch
-    except:
-        print('Warning GSAS-II incompletely updated. Please contact toby@anl.gov')
-    # end patch
+    print(GSASIIpath.getG2VersionInfo())
+    
     prog = 'convcell'
     if sys.platform.startswith('win'): prog += '.exe'
     if not os.path.exists(os.path.join(GSASIIpath.binaryPath,prog)):
@@ -524,8 +509,8 @@ def ShowVersions():
     #elif GSASIIpath.GetConfigValue('debug'):
     #    print('N.B. current binaries have been updated')
     if warn:
-        print(70*'=','''
-You are running GSAS-II in a Python environment with either untested 
+        print(70*'=')
+        print('''You are running GSAS-II in a Python environment with either untested 
 or known to be problematic packages, as noted above. If you are seeing 
 problems in running GSAS-II you are suggested to install an additional 
 copy of GSAS-II from one of the gsas2full installers (see 
@@ -533,8 +518,8 @@ https://bit.ly/G2install). This will provide a working Python
 environment as well as the latest GSAS-II version. 
 
 For information on GSAS-II package requirements see 
-https://gsas-ii.readthedocs.io/en/latest/packages.html
-''',70*'=','\n')
+https://gsas-ii.readthedocs.io/en/latest/packages.html''')
+        print(70*'=','\n')
 
 def TestOldVersions():
     '''Test the versions of required Python packages, etc.
@@ -738,7 +723,7 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnFileClose, id=item.GetId())
         item = parent.Append(wx.ID_PREFERENCES,"&Preferences",'')
         self.Bind(wx.EVT_MENU, self.OnPreferences, item)
-        if GSASIIpath.whichsvn():
+        if GSASIIpath.HowIsG2Installed() == 'svn':
             item = parent.Append(wx.ID_ANY,'Edit proxy...','Edit proxy internet information (used for updates)')
             self.Bind(wx.EVT_MENU, self.EditProxyInfo, id=item.GetId())
         if GSASIIpath.GetConfigValue('debug'):
@@ -4299,9 +4284,10 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         if DelList:
             SelectDataTreeItem(self,selItem)
-            self.GPXtree.UpdateSelection()
-            # self.GPXtree.SelectItem(self.root)
-            # self.GPXtree.SelectItem(selItem)
+            try: # fails if previously selected item is deleted
+                self.GPXtree.UpdateSelection()
+            except:            
+                self.GPXtree.SelectItem(self.root)
                 
     def OnPlotDelete(self,event):
         '''Delete one or more plots from plot window. Called by the
@@ -6977,7 +6963,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.GeneralCalc.Append(G2G.wxID_USEBILBAOMAG,'Select magnetic/subgroup phase','If disabled, make in PWDR/Unit Cells')
         self.GeneralCalc.Append(G2G.wxID_USEBILBAOSUB,'Make subgroup project file(s)','Requires subcell search in PWDR/Unit Cells')
         G2G.Define_wxId('wxID_SUPERSRCH')
-        self.GeneralCalc.Append(G2G.wxID_SUPERSRCH,'Supergroup search','Search for settings of this phase in higher symmetry')
+        self.GeneralCalc.Append(G2G.wxID_SUPERSRCH,'Bilbao Supergroup search','Search for settings of this phase in higher symmetry')
+        G2G.Define_wxId('wxID_ISOSRCH')
+        self.GeneralCalc.Append(G2G.wxID_ISOSRCH,'ISOCIF Supergroup search','Search for settings of this phase in higher symmetry')
         self.GeneralCalc.Append(G2G.wxID_VALIDPROTEIN,'Protein quality','Protein quality analysis')
         self.PostfillDataMenu()
         
