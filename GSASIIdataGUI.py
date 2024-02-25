@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIdataGUI - Main GUI routines
 #========== SVN repository information ###################
-# $Date: 2024-02-18 21:36:33 -0600 (Sun, 18 Feb 2024) $
+# $Date: 2024-02-25 16:03:48 -0600 (Sun, 25 Feb 2024) $
 # $Author: toby $
-# $Revision: 5733 $
+# $Revision: 5739 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIdataGUI.py $
-# $Id: GSASIIdataGUI.py 5733 2024-02-19 03:36:33Z toby $
+# $Id: GSASIIdataGUI.py 5739 2024-02-25 22:03:48Z toby $
 #=========- SVN repository information ###################
 '''
 Routines for main GUI wx.Frame follow. 
@@ -58,7 +58,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5733 $")
+GSASIIpath.SetVersionNumber("$Revision: 5739 $")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
 import GSASIIfiles as G2fil
@@ -690,6 +690,7 @@ We strongly recommend reinstalling GSAS-II from a new installation kit as we may
         pass
     #application.GetTopWindow().SendSizeEvent()
     application.GetTopWindow().Show(True)
+    application.main.UpdateTask = GSASIIpath.GetRepoUpdatesInBackground()
 
 #### Create main frame (window) for GUI; main menu items here #######################################
 class GSASII(wx.Frame):
@@ -6681,6 +6682,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PeakEdit.Append(G2G.wxID_PEAKSAVE,'Save peaks...','Save peak list to file')
         self.SeqPeakFit = self.PeakEdit.Append(G2G.wxID_SEQPEAKFIT,'Seq PeakFit', 
             'Sequential Peak fitting for all histograms' )
+        G2G.Define_wxId('wxID_DELPEAKS')
+        self.PeakEdit.Append(G2G.wxID_DELPEAKS,'Delete peaks','Delete selected peaks from the list' )
         self.PeakEdit.Append(G2G.wxID_CLEARPEAKS,'Clear peaks','Clear the peak list' )
         self.movePeak = self.PeakEdit.Append(wx.ID_ANY,'Move selected peak',
             'Select a peak in the table, then use this to move it with the mouse.')
@@ -6690,6 +6693,12 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 'When unvaried, Generate sigma & gamma from UVWXY...',
                 kind=wx.ITEM_CHECK)
         self.setPeakMode.Check(True)
+        G2G.Define_wxId('wxID_XTRAPEAKMODE')
+        self.XtraPeakMode = self.PeakEdit.Append(G2G.wxID_XTRAPEAKMODE,
+                'Add impurity/subgrp/magnetic peaks',
+                'Set positions of magnetic, impurity or subgroup peaks',
+                kind=wx.ITEM_CHECK)
+        self.XtraPeakMode.Check(False)
         
         self.PostfillDataMenu()
         self.UnDo.Enable(False)
@@ -8442,11 +8451,11 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2frame.GPXtree.SetItemPyData(item,data)
 #end patch
         # if GSASIIpath.GetConfigValue('debug'):
-        #     import importlib as imp
-        #     imp.reload(G2pdG)
-        #     imp.reload(G2pwd)
-        #     #imp.reload(G2plt)
-        #     print('reloading G2pwdGUI and G2pwd')
+        #    from importlib import reload
+        #    reload(G2pdG)
+        #    imp.reload(G2pwd)
+        #    reload(G2plt)
+        #    print('reloading G2pwdGUI & G2plt')
         G2pdG.UpdatePeakGrid(G2frame,data)
         newPlot = False
         if hasattr(G2frame,'Contour'):
