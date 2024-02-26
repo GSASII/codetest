@@ -2369,6 +2369,7 @@ to update/regress repository from git repository:
         fp.write(f'git_prevtaggedversion = {commitm1!r}\n')
         fp.write(f'git_prevtags = {tagsm1}\n')
         fp.close()
+        print(f'Created git version file {pyfile!r}')
         sys.exit()
 
     if updateType == 'fetch':
