@@ -1,0 +1,4 @@
+[filter "createVersionFile"]
+   clean = touch clean.text
+   smudge = touch smudge.text
+#   smudge = python GSASIIpath.py --git-record
