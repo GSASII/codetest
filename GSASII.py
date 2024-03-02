@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 #GSASII
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2024-03-02 11:51:44 -0600 (Sat, 02 Mar 2024) $
+# $Author: toby $
+# $Revision: 5745 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASII.py $
+# $Id: GSASII.py 5745 2024-03-02 17:51:44Z toby $
 ########### SVN repository information ###################
 '''
 A single class, :class:`G2App`, is defined here to create 
@@ -21,6 +21,7 @@ import scipy.optimize # addresses problem with build for wx on Pi
 try:
     import wx
     # the next line removes the need for pythonw. Thanks to Matt Newville!
+    # appears unneaded from wx 4.2.1 on
     if sys.platform.lower() == 'darwin': wx.PyApp.IsDisplayAvailable = lambda _: True
 # importing the following wx modules at the same time as wx seems to eliminate 
 # the "Debug: Adding duplicate image handler for 'Windows bitmap file'"
@@ -35,7 +36,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5745 $")
 
 __version__ = '1.0.0'
 

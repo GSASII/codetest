@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIdataGUI - Main GUI routines
 #========== SVN repository information ###################
-# $Date: 2024-03-01 21:32:39 -0600 (Fri, 01 Mar 2024) $
+# $Date: 2024-03-02 11:51:44 -0600 (Sat, 02 Mar 2024) $
 # $Author: toby $
-# $Revision: 5744 $
+# $Revision: 5745 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIdataGUI.py $
-# $Id: GSASIIdataGUI.py 5744 2024-03-02 03:32:39Z toby $
+# $Id: GSASIIdataGUI.py 5745 2024-03-02 17:51:44Z toby $
 #=========- SVN repository information ###################
 '''
 Routines for main GUI wx.Frame follow. 
@@ -58,7 +58,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5744 $")
+GSASIIpath.SetVersionNumber("$Revision: 5745 $")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
 import GSASIIfiles as G2fil
@@ -505,7 +505,7 @@ def ShowVersions():
     if sys.platform.startswith('win'): prog += '.exe'
     if not os.path.exists(os.path.join(GSASIIpath.binaryPath,prog)):
         versionDict['errors'] += 'Installed binary files need an update. If you built them, rerun scons'
-        warn = True
+        #warn = True
     #elif GSASIIpath.GetConfigValue('debug'):
     #    print('N.B. current binaries have been updated')
     if warn:

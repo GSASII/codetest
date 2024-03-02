@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
 ########### SVN repository information ###################
-# $Date: 2024-03-01 13:58:33 -0600 (Fri, 01 Mar 2024) $
+# $Date: 2024-03-02 11:51:44 -0600 (Sat, 02 Mar 2024) $
 # $Author: toby $
-# $Revision: 5742 $
+# $Revision: 5745 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5742 2024-03-01 19:58:33Z toby $
+# $Id: GSASIIpath.py 5745 2024-03-02 17:51:44Z toby $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
@@ -99,10 +99,10 @@ version = -1
 def SetVersionNumber(RevString):
     '''Set the subversion (svn) version number
 
-    :param str RevString: something like "$Revision: 5742 $"
+    :param str RevString: something like "$Revision: 5745 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5742 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5745 $")`` in every python
     file.
     '''
     try:
@@ -763,7 +763,11 @@ def gitStartUpdate(cmdopts):
     cmd = [sys.executable, __file__] + cmdopts
     if GetConfigValue('debug'): print('Starting updates with command\n\t'+
                                       f'{" ".join(cmd)}')
-    subprocess.Popen(cmd)
+    proc = subprocess.Popen(cmd)
+    # on windows the current process needs to end so that the source files can
+    # be written over. On unix the current process needs to stay running
+    # so the child is not killed.
+    if sys.platform != "win32": proc.wait()
     sys.exit()
 
 def dirGitHub(dirlist,orgName=gitOwner, repoName=gitRepo):
