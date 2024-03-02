@@ -10,7 +10,7 @@ used to run this script.
 
 '''
 from __future__ import division, print_function
-version = "$Id: makeBat.py 5745 2024-03-02 17:51:44Z toby $"
+version = "$Id: makeBat.py 5746 2024-03-02 18:30:10Z toby $"
 # creates Windows files to aid in running GSAS-II
 #   creates RunGSASII.bat and a desktop shortcut to that file
 #   registers the filetype .gpx so that the GSAS-II project files exhibit the
@@ -51,8 +51,14 @@ if __name__ == '__main__':
     if not gsaspath: gsaspath = os.path.curdir
     gsaspath = os.path.abspath(os.path.expanduser(gsaspath))
     G2script = os.path.join(gsaspath,'GSASII.py')
+    # when invoked from gitstrap.py, __file__ will appear in the wrong directory
+    if not os.path.exists(G2script):
+        gsaspath = os.path.join(gsaspath,'GSASII')
+        G2script = os.path.join(gsaspath,'GSASII.py')
+        print(f'patching gsaspath to {gsaspath}')
     #
     # Hmmm, perhaps we should not create these files in the GSASII directory, which is "owned" by git
+    # TODO: maybe address in the future
     #
     G2bat = os.path.join(gsaspath,'RunGSASII.bat')
     G2icon = os.path.join(gsaspath,'gsas2.ico')
