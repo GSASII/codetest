@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIdataGUI - Main GUI routines
 #========== SVN repository information ###################
-# $Date: 2024-02-25 16:03:48 -0600 (Sun, 25 Feb 2024) $
+# $Date: 2024-03-01 21:32:39 -0600 (Fri, 01 Mar 2024) $
 # $Author: toby $
-# $Revision: 5739 $
+# $Revision: 5744 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIdataGUI.py $
-# $Id: GSASIIdataGUI.py 5739 2024-02-25 22:03:48Z toby $
+# $Id: GSASIIdataGUI.py 5744 2024-03-02 03:32:39Z toby $
 #=========- SVN repository information ###################
 '''
 Routines for main GUI wx.Frame follow. 
@@ -58,7 +58,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5739 $")
+GSASIIpath.SetVersionNumber("$Revision: 5744 $")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
 import GSASIIfiles as G2fil
@@ -2405,7 +2405,7 @@ class GSASII(wx.Frame):
         dlg.Destroy()
 
     def EditProxyInfo(self,event):
-        '''Edit the proxy information used by subversion
+        '''Edit the proxy information used by subversion (svn only, not used with git)
         '''
         h,p,e = host,port,etc = GSASIIpath.getsvnProxy()
         labels = ['Proxy address','proxy port']
