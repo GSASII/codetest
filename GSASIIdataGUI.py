@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIdataGUI - Main GUI routines
 #========== SVN repository information ###################
-# $Date: 2024-03-02 11:51:44 -0600 (Sat, 02 Mar 2024) $
+# $Date: 2024-03-04 13:37:23 -0600 (Mon, 04 Mar 2024) $
 # $Author: toby $
-# $Revision: 5745 $
+# $Revision: 5750 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIdataGUI.py $
-# $Id: GSASIIdataGUI.py 5745 2024-03-02 17:51:44Z toby $
+# $Id: GSASIIdataGUI.py 5750 2024-03-04 19:37:23Z toby $
 #=========- SVN repository information ###################
 '''
 Routines for main GUI wx.Frame follow. 
@@ -58,7 +58,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5745 $")
+GSASIIpath.SetVersionNumber("$Revision: 5750 $")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
 import GSASIIfiles as G2fil
@@ -709,9 +709,9 @@ class GSASII(wx.Frame):
         '''
         item = parent.Append(wx.ID_ANY,'&Open project...\tCtrl+O','Open a GSAS-II project (.gpx) file')            
         self.Bind(wx.EVT_MENU, self.OnFileOpen, id=item.GetId())
-        if sys.platform == "darwin": 
-            item = parent.Append(wx.ID_ANY,'&Open in new window...','Open a GSAS-II project (.gpx) file in a separate process')
-            self.Bind(wx.EVT_MENU, self.OnNewGSASII, id=item.GetId())
+        # if sys.platform == "darwin": 
+        item = parent.Append(wx.ID_ANY,'&Open in new window...','Open a GSAS-II project (.gpx) file in a separate process')
+        self.Bind(wx.EVT_MENU, self.OnNewGSASII, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Reopen recent...\tCtrl+E','Reopen a previously used GSAS-II project (.gpx) file')
         self.Bind(wx.EVT_MENU, self.OnFileReopen, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Open w/project browser\tCtrl+B','Use project browser to a GSAS-II project (.gpx) file')            
@@ -4637,8 +4637,9 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
         G2script = os.path.join(os.path.split(__file__)[0],'GSASII.py')
-        GSASIIpath.MacStartGSASII(G2script,GSASprojectfile)
-
+        #GSASIIpath.MacStartGSASII(G2script,GSASprojectfile)
+        G2G.openInNewTerm(GSASprojectfile)
+        
     def SetTitleByGPX(self):
         '''Set the title for the two window frames
         '''

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIctrlGUI - Custom GSAS-II GUI controls
 ########### SVN repository information ###################
-# $Date: 2024-03-04 13:37:23 -0600 (Mon, 04 Mar 2024) $
+# $Date: 2024-03-04 15:30:32 -0600 (Mon, 04 Mar 2024) $
 # $Author: toby $
-# $Revision: 5750 $
+# $Revision: 5751 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIctrlGUI.py $
-# $Id: GSASIIctrlGUI.py 5750 2024-03-04 19:37:23Z toby $
+# $Id: GSASIIctrlGUI.py 5751 2024-03-04 21:30:32Z toby $
 ########### SVN repository information ###################
 '''Documentation for all the routines in module :mod:`GSASIIctrlGUI`
 follows.
@@ -47,7 +47,7 @@ except ImportError:
     from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5750 $")
+GSASIIpath.SetVersionNumber("$Revision: 5751 $")
 import GSASIIdataGUI as G2gd
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
