@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
 ########### SVN repository information ###################
-# $Date: 2024-03-02 11:51:44 -0600 (Sat, 02 Mar 2024) $
+# $Date: 2024-03-04 13:37:23 -0600 (Mon, 04 Mar 2024) $
 # $Author: toby $
-# $Revision: 5745 $
+# $Revision: 5750 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5745 2024-03-02 17:51:44Z toby $
+# $Id: GSASIIpath.py 5750 2024-03-04 19:37:23Z toby $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
@@ -99,10 +99,10 @@ version = -1
 def SetVersionNumber(RevString):
     '''Set the subversion (svn) version number
 
-    :param str RevString: something like "$Revision: 5745 $"
+    :param str RevString: something like "$Revision: 5750 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5745 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5750 $")`` in every python
     file.
     '''
     try:
@@ -1905,40 +1905,40 @@ def LoadConfig(printInfo=True):
         print(60*'*')
         configDict = {'Clip_on':True}
 
-def MacStartGSASII(g2script,project=''):
-    '''Start a new instance of GSAS-II by opening a new terminal window and starting
-    a new GSAS-II process. Used on Mac OS X only.
+# def MacStartGSASII(g2script,project=''):
+#     '''Start a new instance of GSAS-II by opening a new terminal window and starting
+#     a new GSAS-II process. Used on Mac OS X only.
 
-    :param str g2script: file name for the GSASII.py script
-    :param str project: GSAS-II project (.gpx) file to be opened, default is blank
-      which opens a new project
-    '''
-    if project and os.path.splitext(project)[1] != '.gpx':
-        print(f'file {project} cannot be used. Not GSAS-II project (.gpx) file')
-        return
-    if project and not os.path.exists(project):
-        print(f'file {project} cannot be found.')
-        return 
-    elif project:
-        project = os.path.abspath(project)
-        if not os.path.exists(project): 
-            print(f'lost project {project} with abspath')
-            raise Exception(f'lost project {project} with abspath')
-    g2script = os.path.abspath(g2script)
-    pythonapp = sys.executable
-    if os.path.exists(pythonapp+'w'): pythonapp += 'w'
-    script = f'''
-set python to "{pythonapp}"
-set appwithpath to "{g2script}"
-set filename to "{project}"
-set filename to the quoted form of the POSIX path of filename
+#     :param str g2script: file name for the GSASII.py script
+#     :param str project: GSAS-II project (.gpx) file to be opened, default is blank
+#       which opens a new project
+#     '''
+#     if project and os.path.splitext(project)[1] != '.gpx':
+#         print(f'file {project} cannot be used. Not GSAS-II project (.gpx) file')
+#         return
+#     if project and not os.path.exists(project):
+#         print(f'file {project} cannot be found.')
+#         return 
+#     elif project:
+#         project = os.path.abspath(project)
+#         if not os.path.exists(project): 
+#             print(f'lost project {project} with abspath')
+#             raise Exception(f'lost project {project} with abspath')
+#     g2script = os.path.abspath(g2script)
+#     pythonapp = sys.executable
+#     if os.path.exists(pythonapp+'w'): pythonapp += 'w'
+#     script = f'''
+# set python to "{pythonapp}"
+# set appwithpath to "{g2script}"
+# set filename to "{project}"
+# set filename to the quoted form of the POSIX path of filename
 
-tell application "Terminal"
-     activate
-     do script python & " " & appwithpath & " " & filename & "; exit"
-end tell
-'''
-    subprocess.Popen(["osascript","-e",script])
+# tell application "Terminal"
+#      activate
+#      do script python & " " & appwithpath & " " & filename & "; exit"
+# end tell
+# '''
+#     subprocess.Popen(["osascript","-e",script])
 
 def MacRunScript(script):
     '''Start a bash script in a new terminal window.
@@ -2506,13 +2506,14 @@ to update/regress repository from git repository:
 
     if gitUpdate:
         # now restart GSAS-II with the new version
-        G2scrpt = os.path.join(path2GSAS2,'GSASII.py')
+        # G2scrpt = os.path.join(path2GSAS2,'GSASII.py')
         if project:
             print(f"Restart GSAS-II with project file {project!r}")
-            subprocess.Popen([sys.executable,G2scrpt,project])
+            # subprocess.Popen([sys.executable,G2scrpt,project])
         else:
             print("Restart GSAS-II without a project file ")
-            subprocess.Popen([sys.executable,G2scrpt])
+            # subprocess.Popen([sys.executable,G2scrpt])
+        G2G.openInNewTerm(project)
         print ('exiting update process')
         sys.exit()
         
