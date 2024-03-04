@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 #GSASII
 ########### SVN repository information ###################
-# $Date: 2024-03-02 11:51:44 -0600 (Sat, 02 Mar 2024) $
+# $Date: 2024-03-04 13:37:23 -0600 (Mon, 04 Mar 2024) $
 # $Author: toby $
-# $Revision: 5745 $
+# $Revision: 5750 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASII.py $
-# $Id: GSASII.py 5745 2024-03-02 17:51:44Z toby $
+# $Id: GSASII.py 5750 2024-03-04 19:37:23Z toby $
 ########### SVN repository information ###################
 '''
 A single class, :class:`G2App`, is defined here to create 
@@ -36,7 +36,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5745 $")
+GSASIIpath.SetVersionNumber("$Revision: 5750 $")
 
 __version__ = '1.0.0'
 
@@ -53,9 +53,11 @@ class G2App(wx.App):
     def MacOpenFiles(self, filenames):
         if self.startupMode:
             return
+        import GSASIIctrlGUI as G2G
         for project in filenames:
             #print("Start GSAS-II with project file "+str(project))
-            GSASIIpath.MacStartGSASII(__file__,project)
+            #GSASIIpath.MacStartGSASII(__file__,project)
+            G2G.openInNewTerm(project)
 
 if __name__ == '__main__':
     if sys.platform == "darwin": 
@@ -65,21 +67,33 @@ if __name__ == '__main__':
     try:
         GSASIIpath.SetBinaryPath(True)
     except:
-        print('Unable to run with current setup, do you want to update to the')
-        try:
-            if '2' in platform.python_version_tuple()[0]:            
-                ans = raw_input("latest GSAS-II version? Update ([Yes]/no): ")
-            else:
-                ans = input("latest GSAS-II version? Update ([Yes]/no): ")                
-        except:
-            ans = 'no'
-        if ans.strip().lower() == "no":
-            import sys
-            print('Exiting')
-            sys.exit()
-        print('Updating...')
-        GSASIIpath.svnUpdateProcess()
-    import GSASIIdataGUI as G2gd    
+        print('Unable to run with current installation, please reset or reinstall')
+        # if GSASIIpath.HowIsG2Installed().startswith('git'):
+        #     print('use this command w/gitstrap')
+        # elif GSASIIpath.HowIsG2Installed().startswith('svn'):
+        #     print('use this command w/bootstrap')
+        sys.exit()
+        # print('Unable to run with current setup, do you want to update to the')
+        # try:
+        #     if '2' in platform.python_version_tuple()[0]:            
+        #         ans = raw_input("latest GSAS-II version? Update ([Yes]/no): ")
+        #     else:
+        #         ans = input("latest GSAS-II version? Update ([Yes]/no): ")                
+        # except:
+        #     ans = 'no'
+        # if ans.strip().lower() == "no":
+        #     import sys
+        #     print('Exiting')
+        #     sys.exit()
+        # print('Updating...')
+        # import GSASIIctrlGUI as G2G
+        #GSASIIpath.svnUpdateProcess()
+        # if GSASIIpath.HowIsG2Installed().startswith('git'):
+        #     gitCheckUpdates(None)
+        # elif GSASIIpath.HowIsG2Installed().startswith('svn'):
+        #     svnCheckUpdates(None)
+        # else:
+    import GSASIIdataGUI as G2gd
     G2gd.GSASIImain(application) # start the GUI
     if sys.platform == "darwin": 
         wx.CallLater(100,application.ClearStartup)
