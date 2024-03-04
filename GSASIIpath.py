@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
 ########### SVN repository information ###################
-# $Date: 2024-03-04 15:30:32 -0600 (Mon, 04 Mar 2024) $
+# $Date: 2024-03-04 15:41:53 -0600 (Mon, 04 Mar 2024) $
 # $Author: toby $
-# $Revision: 5751 $
+# $Revision: 5752 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5751 2024-03-04 21:30:32Z toby $
+# $Id: GSASIIpath.py 5752 2024-03-04 21:41:53Z toby $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
@@ -99,10 +99,10 @@ version = -1
 def SetVersionNumber(RevString):
     '''Set the subversion (svn) version number
 
-    :param str RevString: something like "$Revision: 5751 $"
+    :param str RevString: something like "$Revision: 5752 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5751 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5752 $")`` in every python
     file.
     '''
     try:
@@ -2513,7 +2513,8 @@ to update/regress repository from git repository:
         else:
             print("Restart GSAS-II without a project file ")
             # subprocess.Popen([sys.executable,G2scrpt])
-        G2G.openInNewTerm(project)
+        import GSASIIctrlGUI
+        GSASIIctrlGUI.openInNewTerm(project)
         print ('exiting update process')
         sys.exit()
         
