@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
 ########### SVN repository information ###################
-# $Date: 2024-03-08 21:10:03 -0600 (Fri, 08 Mar 2024) $
+# $Date: 2024-03-09 00:08:15 -0600 (Sat, 09 Mar 2024) $
 # $Author: toby $
-# $Revision: 5759 $
+# $Revision: 5760 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5759 2024-03-09 03:10:03Z toby $
+# $Id: GSASIIpath.py 5760 2024-03-09 06:08:15Z toby $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
@@ -99,10 +99,10 @@ version = -1
 def SetVersionNumber(RevString):
     '''Set the subversion (svn) version number
 
-    :param str RevString: something like "$Revision: 5759 $"
+    :param str RevString: something like "$Revision: 5760 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5759 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5760 $")`` in every python
     file.
     '''
     try:
@@ -653,8 +653,9 @@ def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
     '''    
     bindir = GetBinaryPrefix(pyver)
     if npver:
-        inpver = npver
+        inpver = intver(npver)
     else:
+        npver = np.__version__
         inpver = intver(np.__version__)
     # get binaries matching the required install, approximate match for numpy
     URLdict = getGitBinaryReleases()
@@ -670,18 +671,18 @@ def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
     elif inpver < min(intVersionsList):
         vsel = min(intVersionsList)
         if verbose: print(
-                f'Warning: The installed numpy, version, {np.__version__},'
+                f'Warning: The requested numpy, version, {npver},'
                 f' is older than\n\tthe oldest dist version, {fmtver(vsel)}')
     elif inpver >= max(intVersionsList):
         vsel = max(intVersionsList)
         if verbose and inpver == max(intVersionsList):
             print(
-                f'The current numpy version, {np.__version__},'
+                f'The requested numpy version, {npver},'
                 f' matches the binary dist, version {fmtver(vsel)}')
         elif verbose:
             print(
                 f'Note: using a binary dist for numpy version {fmtver(vsel)} '
-                f'which is older than the installed numpy, version {np.__version__}')
+                f'which is older than the requested numpy, version {npver}')
     else:
         vsel = min(intVersionsList)
         for v in intVersionsList:
@@ -689,8 +690,8 @@ def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
                 vsel = v
             else:
                 if verbose: print(
-                        f'FYI: Selecting dist version {fmtver(v)}'
-                        f' as the installed numpy, version, {np.__version__},'
+                        f'FYI: Selecting dist version {fmtver(vsel)}'
+                        f' as the requested numpy, version, {npver},'
                         f'\n\tis older than the next dist version {fmtver(v)}')
                 break
     return URLdict[versions[vsel]]
