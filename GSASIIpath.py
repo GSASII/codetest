@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
 ########### SVN repository information ###################
-# $Date: 2024-03-04 15:41:53 -0600 (Mon, 04 Mar 2024) $
+# $Date: 2024-03-08 21:10:03 -0600 (Fri, 08 Mar 2024) $
 # $Author: toby $
-# $Revision: 5752 $
+# $Revision: 5759 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5752 2024-03-04 21:41:53Z toby $
+# $Id: GSASIIpath.py 5759 2024-03-09 03:10:03Z toby $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
@@ -99,10 +99,10 @@ version = -1
 def SetVersionNumber(RevString):
     '''Set the subversion (svn) version number
 
-    :param str RevString: something like "$Revision: 5752 $"
+    :param str RevString: something like "$Revision: 5759 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5752 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5759 $")`` in every python
     file.
     '''
     try:
@@ -1755,8 +1755,11 @@ def InvokeDebugOpts():
 def TestSPG(fpth):
     '''Test if pyspg.[so,.pyd] can be run from a location in the path
     '''
-    if not os.path.exists(fpth): return False
-    if not glob.glob(os.path.join(fpth,'pyspg.*')): return False
+    try:
+        if not os.path.exists(fpth): return False
+        if not glob.glob(os.path.join(fpth,'pyspg.*')): return False
+    except:
+        return False
     savpath = sys.path[:]
     sys.path = [fpth]
     # test to see if a shared library can be used
@@ -1787,12 +1790,13 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
       to load, an attempt is made to download the binaries
       (default is False).
 
-      TODO: this is not implemented at present and is not used in 
-      any of the calls to SetBinaryPath
+      TODO: the loadBinary option  not implemented at present and is 
+      not used in any of the calls to SetBinaryPath
     '''
     # do this only once no matter how many times it is called
-    global BinaryPathLoaded,binaryPath
+    global BinaryPathLoaded,binaryPath,BinaryPathFailed
     if BinaryPathLoaded: return
+    if BinaryPathFailed: return
     try:
         inpver = intver(np.__version__)
     except (AttributeError,TypeError): # happens on building docs
@@ -1849,10 +1853,11 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
         binaryPath = binpath
         BinaryPathLoaded = True
     elif not loadBinary:
-        #raise Exception('*** ERROR: Unable to find GSAS-II binaries. Cannot continue')
-        print('*** ERROR: Unable to find GSAS-II binaries. Cannot continue')
+        print('*** ERROR: Unable to find GSAS-II binaries. Much of GSAS-II cannot function')
+        BinaryPathFailed = True
         return None
     else:                                                  # try loading them 
+        BinaryPathFailed = True
         raise Exception("**** ERROR GSAS-II binary libraries not found and loadBinary not"+
                         "\nimplemented in SetBinaryPath, GSAS-II cannot run ****""")
         # if printInfo:
@@ -2265,6 +2270,7 @@ if os.path.exists(os.path.expanduser('~/.G2local/')):
         print("  "+files)
         print("*"*75)
 
+BinaryPathFailed = False
 BinaryPathLoaded = False
 binaryPath = ''
 IPyBreak = DoNothing

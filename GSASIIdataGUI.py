@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIdataGUI - Main GUI routines
 #========== SVN repository information ###################
-# $Date: 2024-03-04 13:37:23 -0600 (Mon, 04 Mar 2024) $
+# $Date: 2024-03-08 21:10:03 -0600 (Fri, 08 Mar 2024) $
 # $Author: toby $
-# $Revision: 5750 $
+# $Revision: 5759 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIdataGUI.py $
-# $Id: GSASIIdataGUI.py 5750 2024-03-04 19:37:23Z toby $
+# $Id: GSASIIdataGUI.py 5759 2024-03-09 03:10:03Z toby $
 #=========- SVN repository information ###################
 '''
 Routines for main GUI wx.Frame follow. 
@@ -58,7 +58,7 @@ try:
 except ImportError:
     pass
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5750 $")
+GSASIIpath.SetVersionNumber("$Revision: 5759 $")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
 import GSASIIfiles as G2fil
@@ -500,14 +500,14 @@ def ShowVersions():
     except:
         pass
     print(GSASIIpath.getG2VersionInfo())
-    
-    prog = 'convcell'
-    if sys.platform.startswith('win'): prog += '.exe'
-    if not os.path.exists(os.path.join(GSASIIpath.binaryPath,prog)):
-        versionDict['errors'] += 'Installed binary files need an update. If you built them, rerun scons'
-        #warn = True
-    #elif GSASIIpath.GetConfigValue('debug'):
-    #    print('N.B. current binaries have been updated')
+
+    if not GSASIIpath.TestSPG(GSASIIpath.binaryPath):
+        versionDict['errors'] += 'Error accessing GSAS-II binary files. Only limited functionality available.'
+    else:
+        prog = 'convcell'
+        if sys.platform.startswith('win'): prog += '.exe'
+        if not os.path.exists(os.path.join(GSASIIpath.binaryPath,prog)):
+            versionDict['errors'] += 'Installed binary files need an update. If you built them, rerun scons'
     if warn:
         print(70*'=')
         print('''You are running GSAS-II in a Python environment with either untested 
@@ -653,15 +653,19 @@ We strongly recommend reinstalling GSAS-II from a new installation kit as we may
                 GSASIIpath.runScript(cmds, wait=True)    
                 sys.exit()
     if versionDict['errors']:
-        dlg = wx.MessageDialog(None, versionDict['errors']+
-             '\n\nThe simplest solution is to install a new version of GSAS-II. '+
-             'See https://bit.ly/G2install',
-                'Python package problem',  wx.OK)
+        msg = (
+        '\n\nGSAS-II will attempt to start, but this problem needs '+
+        'to be fixed for proper operation. Usually, the simplest solution '+
+        'will be to reinstall GSAS-II.'+
+        '\nSee https://bit.ly/G2install')
+        dlg = wx.MessageDialog(None, versionDict['errors']+msg,
+                'GSAS-II Installation Problem',  wx.OK)
         try:
             dlg.ShowModal()
         finally:
             dlg.Destroy()
-        sys.exit()
+        msg = ''
+        #sys.exit()
     elif platform.python_version_tuple()[0] == '2' and int(platform.python_version_tuple()[1]) < 7: 
         msg = 'GSAS-II works best with Python version 3.7 or later.\nThis version is way too old: '+sys.version.split()[0]
     elif platform.python_version_tuple()[0] == '3' and int(platform.python_version_tuple()[1]) < 6: 
@@ -4757,15 +4761,16 @@ class GSASII(wx.Frame):
             return
         else:
             if not self.OnFileSave(event): return
-        FrameInfo = {'Main_Pos':tuple(self.GetPosition()),
+        try:
+            FrameInfo = {'Main_Pos':tuple(self.GetPosition()),
                      'Main_Size':tuple(self.GetSize()),
                      'Plot_Pos':tuple(self.plotFrame.GetPosition()),
                      'Plot_Size':tuple(self.plotFrame.GetSize())}
-        GSASIIpath.SetConfigValue(FrameInfo)
-#        FramePos = {'Main_Pos':tuple(self.GetPosition()),'Plot_Pos':tuple(self.plotFrame.GetPosition())}
-#        GSASIIpath.SetConfigValue(FramePos)
-        config = G2G.GetConfigValsDocs()
-        G2G.SaveConfigVars(config)
+            GSASIIpath.SetConfigValue(FrameInfo)
+            config = G2G.GetConfigValsDocs()
+            G2G.SaveConfigVars(config)
+        except:
+            print('Config save failed')
         if self.G2plotNB:
             self.G2plotNB.Destroy()
         if self.undofile and os.path.exists(self.undofile): 

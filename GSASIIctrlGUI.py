@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIctrlGUI - Custom GSAS-II GUI controls
 ########### SVN repository information ###################
-# $Date: 2024-03-04 15:30:32 -0600 (Mon, 04 Mar 2024) $
+# $Date: 2024-03-06 10:33:02 -0600 (Wed, 06 Mar 2024) $
 # $Author: toby $
-# $Revision: 5751 $
+# $Revision: 5753 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIctrlGUI.py $
-# $Id: GSASIIctrlGUI.py 5751 2024-03-04 21:30:32Z toby $
+# $Id: GSASIIctrlGUI.py 5753 2024-03-06 16:33:02Z toby $
 ########### SVN repository information ###################
 '''Documentation for all the routines in module :mod:`GSASIIctrlGUI`
 follows.
@@ -47,7 +47,7 @@ except ImportError:
     from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5751 $")
+GSASIIpath.SetVersionNumber("$Revision: 5753 $")
 import GSASIIdataGUI as G2gd
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
@@ -9342,7 +9342,6 @@ tell application "Terminal"
      do script python & " " & appwithpath & " " & "; exit"
 end tell
 '''
-        print('script=',script)
         subprocess.Popen(["osascript","-e",script])
     elif sys.platform.startswith("win"):
         cmds = [pythonapp, g2script]

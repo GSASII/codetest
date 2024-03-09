@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 # Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
 ########### SVN repository information ###################
-# $Date: 2024-02-18 11:20:27 -0600 (Sun, 18 Feb 2024) $
+# $Date: 2024-03-07 09:50:37 -0600 (Thu, 07 Mar 2024) $
 # $Author: vondreele $
-# $Revision: 5732 $
+# $Revision: 5757 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIElem.py $
-# $Id: GSASIIElem.py 5732 2024-02-18 17:20:27Z vondreele $
+# $Id: GSASIIElem.py 5757 2024-03-07 15:50:37Z vondreele $
 ########### SVN repository information ###################
 """
 Routines used to define element settings follow. 
@@ -15,7 +15,7 @@ import math
 import sys
 import os.path
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5732 $")
+GSASIIpath.SetVersionNumber("$Revision: 5757 $")
 import copy
 import numpy as np
 import atmdata
@@ -600,6 +600,7 @@ def ClosedFormFF(Z,SQ,k,N):
     
 def BlenResCW(Els,BLtables,wave):
     ''' Computes resonant scattering lengths - single wavelength version (CW)
+    returns bo+b' and b"'
     '''
     FP = np.zeros(len(Els))
     FPP = np.zeros(len(Els))
@@ -611,17 +612,18 @@ def BlenResCW(Els,BLtables,wave):
             T0 = Emev-E0
             T1 = Emev-E1
             T2 = Emev-E2
-            D0 = T0**2+gam**2
-            D1 = T1**2+gam**2
-            D2 = T2**2+gam**2
+            D0 = T0**2+gam**2/4.
+            D1 = T1**2+gam**2/4.
+            D2 = T2**2+gam**2/4.
             FP[i] = Re*(T0/D0+A*T1/D1+B*T2/D2)+BL['BW-LS'][0]
-            FPP[i] = -Im*(1/D0+A/D1+B/D2)
+            FPP[i] = Im*(1/D0+A/D1+B/D2)
         else:
             FPP[i] = BL['SL'][1]    #for Li, B, etc.
     return FP,FPP
     
 def BlenResTOF(Els,BLtables,wave):
     ''' Computes resonant scattering lengths - multiple wavelength version (TOF)
+    returns bo+b' and b"'
     '''
     FP = np.zeros((len(Els),len(wave)))
     FPP = np.zeros((len(Els),len(wave)))
@@ -633,11 +635,11 @@ def BlenResTOF(Els,BLtables,wave):
             T0 = Emev-E0
             T1 = Emev-E1
             T2 = Emev-E2
-            D0 = T0**2+gam**2
-            D1 = T1**2+gam**2
-            D2 = T2**2+gam**2
+            D0 = T0**2+gam**2/4.
+            D1 = T1**2+gam**2/4.
+            D2 = T2**2+gam**2/4.
             FP[i] = Re*(T0/D0+A*T1/D1+B*T2/D2)+BL[i]['BW-LS'][0]
-            FPP[i] = -Im*(1/D0+A/D1+B/D2)
+            FPP[i] = Im*(1/D0+A/D1+B/D2)
         else:
             FPP[i] = np.ones(len(wave))*BL[i]['SL'][1]    #for Li, B, etc.
     return FP,FPP
