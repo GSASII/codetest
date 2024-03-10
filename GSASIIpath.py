@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
 ########### SVN repository information ###################
-# $Date: 2024-03-09 00:08:15 -0600 (Sat, 09 Mar 2024) $
+# $Date: 2024-03-10 16:26:56 -0500 (Sun, 10 Mar 2024) $
 # $Author: toby $
-# $Revision: 5760 $
+# $Revision: 5764 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5760 2024-03-09 06:08:15Z toby $
+# $Id: GSASIIpath.py 5764 2024-03-10 21:26:56Z toby $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
@@ -99,10 +99,10 @@ version = -1
 def SetVersionNumber(RevString):
     '''Set the subversion (svn) version number
 
-    :param str RevString: something like "$Revision: 5760 $"
+    :param str RevString: something like "$Revision: 5764 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5760 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5764 $")`` in every python
     file.
     '''
     try:
@@ -214,7 +214,7 @@ def GetVersionNumber():
     '''
     if HowIsG2Installed().startswith('git'):
         g2repo = git.Repo(path2GSAS2)
-        for h in list(g2repo.iter_commits('head'))[:50]: # (don't go too far back)
+        for h in list(g2repo.iter_commits('HEAD'))[:50]: # (don't go too far back)
             tags = g2repo.git.tag('--points-at',h).split('\n')
             try:
                 for item in tags:

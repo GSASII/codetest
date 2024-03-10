@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIctrlGUI - Custom GSAS-II GUI controls
 ########### SVN repository information ###################
-# $Date: 2024-03-06 10:33:02 -0600 (Wed, 06 Mar 2024) $
+# $Date: 2024-03-10 16:26:56 -0500 (Sun, 10 Mar 2024) $
 # $Author: toby $
-# $Revision: 5753 $
+# $Revision: 5764 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIctrlGUI.py $
-# $Id: GSASIIctrlGUI.py 5753 2024-03-06 16:33:02Z toby $
+# $Id: GSASIIctrlGUI.py 5764 2024-03-10 21:26:56Z toby $
 ########### SVN repository information ###################
 '''Documentation for all the routines in module :mod:`GSASIIctrlGUI`
 follows.
@@ -47,7 +47,7 @@ except ImportError:
     from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 5753 $")
+GSASIIpath.SetVersionNumber("$Revision: 5764 $")
 import GSASIIdataGUI as G2gd
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
@@ -6951,7 +6951,7 @@ class gitVersionSelector(wx.Dialog):
         self.githistory = [h for h in self.githistory if
                         self.g2repo.commit(h).committed_datetime > cutoff]
         # end patch 
-        self.initial_commit = self.g2repo.commit('head')
+        self.initial_commit = self.g2repo.commit('HEAD')
         self.initial_commit_info = self.docCommit(self.initial_commit)
         
         wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Select GSAS-II Version',

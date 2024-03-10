@@ -5,6 +5,9 @@
 #       clean  = python git_filters.py --tag-version
 #       smudge = python git_filters.py --record-version
 #
+# this is failing as somehow the file is getting overwritten, at least on clean
+# but this routine does what it is supposed to do when it is called directly
+#
 import os
 import sys
 import datetime as dt
@@ -67,7 +70,7 @@ if __name__ == '__main__':
             tzinfo=commit.committed_datetime.tzinfo)
         commit0 = commit.hexsha
         tags0 = g2repo.git.tag('--points-at',commit).split('\n')
-        history = list(g2repo.iter_commits('head'))
+        history = list(g2repo.iter_commits('HEAD'))
         for i in history[1:]:
             tags = g2repo.git.tag('--points-at',i)
             if not tags: continue
