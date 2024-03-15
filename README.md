@@ -1,6 +1,6 @@
-=======
-GSAS-II
-=======
+# GSAS-II
+
+<!--   commented out for now
 
 [![Actions Status][actions-badge]][actions-link]
 [![Documentation Status][rtd-badge]][rtd-link]
@@ -10,6 +10,7 @@ GSAS-II
 [![PyPI platforms][pypi-platforms]][pypi-link]
 
 [![GitHub Discussion][github-discussions-badge]][github-discussions-link]
+--!>
 
 <!-- SPHINX-START -->
 
@@ -28,7 +29,7 @@ GSAS-II
 
 <!-- prettier-ignore-end -->
 
-
+## Description
 GSAS-II is a unique and comprehensive Python project for
 the calibration, reduction and analysis of all types of x-ray and neutron
 diffraction data, including single-crystal and powder data, including
@@ -74,19 +75,20 @@ GSAS-II is freely distributed as open source software and runs on Windows,
 MacOS, Linux and Raspberry Pi computers. It currently receives >600
 citations/year. 
 
-* Please Cite: the primary citation for GSAS-II is:
+## Please Cite
+If you use GSAS-II in any part of your project, please cite it in your
+publications. This is the most valuabe way you can demonstrate your support of
+the project.  Note that some sections of program utilize work by
+others and will display citations for that. If you use those sections,
+please cite those papers as well.  
+The primary citation for GSAS-II is:
 
     Toby, B. H., & Von Dreele, R. B. (2013). "GSAS-II: the genesis of
     a modern open-source all purpose crystallography software
     package". Journal of Applied Crystallography, 46(2),
     544-549. ​doi:10.1107/S0021889813003531 
 
-    If you use GSAS-II in any part of your project, please cite it in your
-    publications. This is the most valuabe way you can demonstrate your support of
-    the project.  Note that some sections of program utilize work by
-    others and will display citations for that. If you use those sections,
-    please cite those papers as well.  
-
+## URLs
 * At present the home page for the software is here:
   https://subversion.xray.aps.anl.gov/trac/pyGSAS. Note installation
   instructions and tutorials at that URL.
@@ -105,15 +107,15 @@ citations/year.
   match a recent release. Branches may be used to try out different
   PRs prior to the code update into svn. 
 
-* GSAS-II is free and open source software, see the license file for
-  more details. 
 * Documentation: https://subversion.xray.aps.anl.gov/pyGSAS
 * Code documentation: https://gsasii.readthedocs.io.
 
+GSAS-II is free and open source software, see the license file for
+  more details. 
 
-..   commented out for now
+<!--   commented out for now
      Features
      --------
 
      * TODO
-
+--!>
