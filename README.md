@@ -56,7 +56,7 @@ GSAS-II functionality.
 Many capabilities of GSAS-II are unique to GSAS-II or are only found
 in software with very limited scope. For magnetic scattering, all
 possible color subgroups can be derived and explored. For
-incomensurate structures, a generalized form of 3+1 superstructures
+incommensurate structures, a generalized form of 3+1 superstructures
 can be handled. From powder
 diffraction, GSAS-II supports all stages of data reduction and
 analysis, including area detector calibration and integration, pattern

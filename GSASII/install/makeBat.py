@@ -68,7 +68,9 @@ if __name__ == '__main__':
     # TODO: maybe address in the future
     #
     G2bat = os.path.join(gsaspath,'RunGSASII.bat')
-    G2icon = os.path.join(gsaspath,'gsas2.ico')
+    G2icon = os.path.join(gsaspath,'icons','gsas2.ico')
+    if not os.path.exists(G2icon):  # patch 3/2024 for svn dir organization
+        G2icon = os.path.join(gsaspath,'gsas2.ico')
     pythonexe = os.path.realpath(sys.executable)
     print('Python installed at',pythonexe)
     print('GSAS-II installed at',gsaspath)

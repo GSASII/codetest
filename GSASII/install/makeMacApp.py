@@ -1,8 +1,18 @@
 #!/usr/bin/env python
+#------------------------------------------------------------
+# this version intended for use with git installations
+#------------------------------------------------------------
 '''
-This routine creates an app, 
-usually created in the directory where the GSAS-II script (.../GSASII/GSASII.py) 
-is located. A softlink to Python is created inside that app bundle, 
+This routine creates an app bundle which must be located in a directory one
+level below main conda installation directory, so that Python can be
+run from the ../bin relative to the app location.
+
+in the directory where the 
+the GSAS-II git repository is installed, which is in the  When GSAS-II is installed from git, the 
+GSAS-II script will typically be found in the GSASII child directory
+($CONDA_HOME/GSAS-II/GSASII/GSASII.py). 
+
+A softlink to Python is created inside that app bundle, 
 but the softlink name is GSAS-II so that "GSAS-II" shows up as the name 
 of the app in the menu bar, etc. rather than "Python". A soft link named 
 GSAS-II.py, referencing the GSASII.py script, is created so that some file 
@@ -12,18 +22,16 @@ alas).
 This can be used two different ways. 
 
  1. In the usual way, for conda-type installations
-    where Python is in <condaroot>/bin and GSAS-II is in <condaroot>/GSASII, a premade 
-    app is restored from a tar file. This works best for 11.0 (Big Sur) where there are security 
-    constraints in place. 
+    where Python is in <condaroot>/bin and GSAS-II is in <condaroot>/GSASII, 
+    a premade app is restored from a tar file. This works best for 11.0 (Big 
+    Sur) and beyond where there are security constraints in place. 
 
  2. If Python is not in that location or a name/location is specified
-    for the app that will be created, this script creates an app (AppleScript) with the GSAS-II
-    and the python locations hard coded. When an AppleScript is created,  
-    this script tests to make sure that a wxpython script will run inside the 
-    app and if not, it searches for a pythonw image and tries that. 
-
-This has been tested with several versions of Python interpreters 
-from Anaconda and does not require pythonw (Python.app). 
+    for the app that will be created, this script creates an app (via 
+    AppleScript) with the GSAS-II and the python locations hard coded. 
+    When an AppleScript is created, this script tests to make sure that 
+    a wxpython script will run inside the app and if not, it searches 
+    for a pythonw image and tries that. 
 
 Run this script with no arguments or with one or two arguments.
 
@@ -32,11 +40,10 @@ which can have a relative or absolute path (the absolute path is determined).
 If not supplied, the GSASII.py script will be used from the directory where 
 this (makeMacApp.py) script is found. 
 
-The second argument, if supplied, 
-provides the name/location for the app to be created. This can be used to create 
-multiple app copies using different Python versions (likely use for
-development only). If the second argument is used, the AppleScript is created rather than 
-restored from g2app.tar.gz
+The second argument, if supplied, provides the name/location for the app 
+to be created. This can be used to create multiple app copies using different 
+Python versions (likely use for development only). If the second argument is used, 
+the AppleScript is created rather than restored from g2app.tar.gz
 '''
 
 from __future__ import division, print_function
@@ -98,7 +105,8 @@ if __name__ == '__main__':
 
 # new approach, if possible use previously created file 
 if __name__ == '__main__' and sys.platform == "darwin" and os.path.exists(
-                os.path.join(path2GSAS,"g2app.tar.gz")) and project =="GSAS-II":
+                os.path.join(path2GSAS,'inputs',"g2app.tar.gz")
+                ) and project =="GSAS-II":
     if os.path.exists(os.path.join(path2GSAS,'../bin/python')):
         print('found python, found g2app.tar.gz')
         subprocess.call(["rm","-rf",appPath])
@@ -118,7 +126,9 @@ if __name__ == '__main__' and sys.platform == "darwin" and os.path.exists(
         print('found g2app.tar.gz, but python not in expected location')        
 
 if __name__ == '__main__' and sys.platform == "darwin":
-    iconfile = os.path.join(path2GSAS,'gsas2.icns') # optional icon file
+    iconfile = os.path.join(path2GSAS,'icons','gsas2.icns') # optional icon file
+    if not os.path.exists(iconfile): # patch 3/2024 for svn dir organization
+        iconfile = os.path.join(path2GSAS,'gsas2.icns') # optional icon file
     
     AppleScript = '''(*   GSAS-II AppleScript by B. Toby (brian.toby@anl.gov)
      It can launch GSAS-II by double clicking or by dropping a data file

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIconstrGUI - constraint GUI routines
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2024-02-07 14:07:07 -0600 (Wed, 07 Feb 2024) $
+# $Author: toby $
+# $Revision: 5723 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIconstrGUI.py $
+# $Id: GSASIIconstrGUI.py 5723 2024-02-07 20:07:07Z toby $
 ########### SVN repository information ###################
 '''
 Constraints and rigid bodies GUI routines follow.
@@ -25,7 +25,7 @@ import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5723 $")
 import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
 import GSASIIstrIO as G2stIO
@@ -1427,7 +1427,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             btn.Enable(len(errmsg) > 0)
             btn = wx.Button(panel, wx.ID_ANY, 'Show Warnings')
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
-            btn.Bind(wx.EVT_BUTTON,lambda event: G2G.ShowScrolledInfo(panel,warnmsg))
+            btn.Bind(wx.EVT_BUTTON,lambda event: G2G.ShowScrolledInfo(panel,warnmsg.replace('&','&&')))
             btn.Enable(len(warnmsg) > 0)
             btn = wx.Button(panel, wx.ID_ANY, 'Show generated constraints')
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
@@ -2023,7 +2023,12 @@ def UpdateRigidBodies(G2frame,data):
             #G2frame.Page = [page,'rrb']
             
     def getMacroFile(macName):
-        defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
+        defDir = os.path.join(GSASIIpath.path2GSAS2,'inputs','GSASIImacros')
+        if not os.path.exists(defDir):  # patch 3/2024 for svn dir organization
+            defDir = os.path.join(GSASIIpath.path2GSAS2,'GSASIImacros')
+        if not os.path.exists(defDir):
+            print('Warning: GSASIImacros directory not found')
+            return []
         dlg = wx.FileDialog(G2frame,message='Choose '+macName+' rigid body macro file',
             defaultDir=defDir,defaultFile="",wildcard="GSAS-II macro file (*.mac)|*.mac",
             style=wx.FD_OPEN | wx.FD_CHANGE_DIR)

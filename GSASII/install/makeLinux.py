@@ -43,7 +43,9 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
         script = os.path.abspath(sys.argv[1])
     else:
         Usage()
-    icon = os.path.join(os.path.split(script)[0], 'gsas2.png')
+    icon = os.path.join(os.path.split(script)[0],'icons','gsas2.png')
+    if not os.path.exists(icon): # patch 3/2024 for svn dir organization
+        icon = os.path.join(os.path.split(script)[0], 'gsas2.png')
 
     # make sure we found it
     if not os.path.exists(script):

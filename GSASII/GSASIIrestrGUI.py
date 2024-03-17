@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIrestr - restraint GUI routines
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2023-09-29 15:47:55 -0500 (Fri, 29 Sep 2023) $
+# $Author: vondreele $
+# $Revision: 5663 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIrestrGUI.py $
+# $Id: GSASIIrestrGUI.py 5663 2023-09-29 20:47:55Z vondreele $
 ########### SVN repository information ###################
 '''Restraint GUI routines follow.
 '''
@@ -16,7 +16,7 @@ import numpy as np
 import numpy.ma as ma
 import os.path
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5663 $")
 import GSASIImath as G2mth
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -82,7 +82,12 @@ def UpdateRestraints(G2frame,data,phaseName):
 #    global Pages
     
     def getMacroFile(macName):
-        defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
+        defDir = os.path.join(GSASIIpath.path2GSAS2,'inputs','GSASIImacros')
+        if not os.path.exists(defDir): # patch 3/2024 for svn dir organization
+            defDir = os.path.join(GSASIIpath.path2GSAS2,'GSASIImacros')
+        if not os.path.exists(defDir):
+            print('Warning: GSASIImacros directory not found')
+            return
         dlg = wx.FileDialog(G2frame,message='Choose '+macName+' restraint macro file',
             defaultDir=defDir,defaultFile="",wildcard="GSAS-II macro file (*.mac)|*.mac",
             style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
