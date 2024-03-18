@@ -3,129 +3,166 @@
 # this version intended for use with git installations
 #------------------------------------------------------------
 '''
-This routine creates an app bundle which must be located in a directory one
-level below main conda installation directory, so that Python can be
-run from the ../bin relative to the app location.
+This routine creates an app bundle named GSAS-II.app. Inside the 
+bundle is a symbolic link to the Python executable named "GSAS-II" 
+that will be used to run GSAS-II. Having this link named that
+way causes the name of the app to shows in the menu bar as 
+"GSAS-II" rather than "Python". Also used by the app, is another 
+symbolic link named GSAS-II.py, which must be placed in the same 
+directory as the app bundle. This file is linked to the GSASII.py 
+script and the link is run using the link to Python. This also 
+causes other items in the app to be labeled as GSAS-II (but not 
+with the right capitalization, alas). 
 
-in the directory where the 
-the GSAS-II git repository is installed, which is in the  When GSAS-II is installed from git, the 
-GSAS-II script will typically be found in the GSASII child directory
-($CONDA_HOME/GSAS-II/GSASII/GSASII.py). 
+The original contents of the app bundle was created interactively 
+and, after some manual edits, the contents of that was placed into 
+a tar file distributed with GSAS-II, and is expanded in this script. 
+This method seems to be needed for MacOS 11.0+ (Big Sur and later) 
+where Apple's security constraints seem to prevent creation of the 
+app directly. Older code (not currently in use) created the 
+app from "scratch" using the osacompile utility, but that no longer
+seems to work.
 
-A softlink to Python is created inside that app bundle, 
-but the softlink name is GSAS-II so that "GSAS-II" shows up as the name 
-of the app in the menu bar, etc. rather than "Python". A soft link named 
-GSAS-II.py, referencing the GSASII.py script, is created so that some file 
-menu items also are labeled with GSAS-II (but not the right capitalization, 
-alas). 
+Three different paths are needed to run this script:: 
 
-This can be used two different ways. 
+    path2GSAS:  The location where the GSASII.py (and other GSAS-II 
+       Python files) are found. 
+    installLoc: The location where the GSAS-II.app app bundle and 
+       the GSAS-II.py will be placed.
+    pythonLoc:  The location of the Python executable. 
 
- 1. In the usual way, for conda-type installations
-    where Python is in <condaroot>/bin and GSAS-II is in <condaroot>/GSASII, 
-    a premade app is restored from a tar file. This works best for 11.0 (Big 
-    Sur) and beyond where there are security constraints in place. 
+Under normal circumstances, the locations for all of these paths 
+can be determined from the location of the makeMacApp.py file. 
+Note that when GSAS-II is installed from git using gitstrap.py, 
+the git repository is placed at <loc>/GSAS-II and the GSAS-II 
+Python scripts are placed at the GSASII child directory, so that 
+GSAS-II is started from the GSASII.py script at <loc>/GSAS-II/GSASII/
+and the current script (makeMacApp.py) will be found in 
+<loc>/GSAS-II/GSASII/install/. 
 
- 2. If Python is not in that location or a name/location is specified
-    for the app that will be created, this script creates an app (via 
-    AppleScript) with the GSAS-II and the python locations hard coded. 
-    When an AppleScript is created, this script tests to make sure that 
-    a wxpython script will run inside the app and if not, it searches 
-    for a pythonw image and tries that. 
+When the GSAS-II conda installers 
+are used, the git repository is placed at $CONDA_HOME/GSAS-II so that 
+<loc> above is $CONDA_HOME. Also, the Python executable will be found
+in $CONDA_HOME/bin/Python. Thus, if this file is in makePath (typically 
+<loc>/GSAS-II/GSASII/install), then 
 
+    * path2GSAS will be makePath/.. and 
+    * installLoc will be path2GSAS/.. and 
+    * pythonLoc will be installLoc/../bin/python, 
+
+but these locations can be overridden from the command-line arguments. 
+If a Python location is not supplied and is not at the default location 
+(installLoc/../bin/python) then the Python executable currently 
+running this script (from sys.executable) is used. 
+    
 Run this script with no arguments or with one or two arguments.
 
-The first argument, if supplied, is a reference to the GSASII.py script, 
-which can have a relative or absolute path (the absolute path is determined).
-If not supplied, the GSASII.py script will be used from the directory where 
-this (makeMacApp.py) script is found. 
+The first argument, if supplied, provides the path to be used for the 
+app bundle will be created. Note that GSAS-II.app and GSAS-II.py will
+be created in this directory. 
 
-The second argument, if supplied, provides the name/location for the app 
-to be created. This can be used to create multiple app copies using different 
-Python versions (likely use for development only). If the second argument is used, 
-the AppleScript is created rather than restored from g2app.tar.gz
+The second argument, if supplied, is path2GSAS, a path to the 
+location GSASII.py script, which can be a relative path 
+(the absolute path is determined). If not supplied, the GSASII.py script 
+is expected to be located in the directory above where this 
+(makeMacApp.py) script is found. 
+
+The third argument, if supplied, provides the full path for the Python 
+installation to be used inside the app bundle that will be created. If not 
+supplied, and Python exists at installLoc/../bin/python, that will be used. 
+If that does not exist, then the location of the current Python executable
+(from sys.executable) will be used. 
+
 '''
 
 from __future__ import division, print_function
 import sys, os, os.path, stat, shutil, subprocess, plistlib
 import platform
 def Usage():
-    print("\n\tUsage: python "+sys.argv[0]+" [<GSAS-II script>] [project]\n")
+    print(f"\nUsage:\n\tpython {os.path.abspath(sys.argv[0])} [install_path] [<GSAS-II_script>] [Python_loc]\n")
     sys.exit()
 
-def RunPython(image,cmd):
-    'Run a command in a python image'
-    try:
-        err=None
-        p = subprocess.Popen([image,'-c',cmd],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        out = p.stdout.read()
-        err = p.stderr.read()
-        p.communicate()
-        return out,err
-    except Exception(err):
-        return '','Exception = '+err
-
 AppleScript = ''
-'''Contains an AppleScript to start GSAS-II, launching Python and the
-GSAS-II python script.
+'''Will be set to contain an AppleScript to start GSAS-II by launching 
+Python and the GSAS-II Python script. Not currently used.
 '''
 
 if __name__ == '__main__':
-    project="GSAS-II"
-    # set GSAS-II location (path2GSAS): find the main GSAS-II script 
-    # from this file, if not on command line
-    if len(sys.argv) == 1:
-        path2GSAS = os.path.dirname(__file__)
-        script = os.path.abspath(os.path.join(path2GSAS,"GSASII.py"))
-        # when invoked from gitstrap.py, __file__ will appear in the wrong directory
-        if not os.path.exists(script):
-            path2GSAS = os.path.join(path2GSAS,'GSASII')
-            script = os.path.abspath(os.path.join(path2GSAS,"GSASII.py"))
-            print(f'patching path2GSAS to {path2GSAS}')
-    elif len(sys.argv) == 2:
-        script = os.path.abspath(sys.argv[1])
-        path2GSAS = os.path.split(script)[0]
-    elif len(sys.argv) == 3:
-        script = os.path.abspath(sys.argv[1])
-        path2GSAS = os.path.split(script)[0]
-        project = sys.argv[2]
-    else:
+    # set defaults
+    project="GSAS-II"  # name of app
+    makePath = os.path.dirname(__file__)  # location of this script
+    path2GSAS = os.path.dirname(makePath)
+    installLoc = os.path.dirname(path2GSAS)
+    pythonLoc = None
+    # use command line args, if any
+    if len(sys.argv) > 4: # too many
         Usage()
-    if not os.path.exists(script):
-        print("\nFile "+script+" not found")
+    if len(sys.argv) >= 2:
+        installLoc = os.path.abspath(sys.argv[1])
+    if len(sys.argv) >= 3:
+        path2GSAS = os.path.abspath(sys.argv[2])
+    if len(sys.argv) == 4:
+        pythonLoc = os.path.abspath(sys.argv[3])
+    # sanity checking
+    G2script = os.path.abspath(os.path.join(path2GSAS,"GSASII.py"))
+    if not os.path.exists(G2script):
+        print(f"\nERROR: File {G2script!r} not found")
         Usage()
-    if os.path.splitext(script)[1].lower() != '.py':
-        print("\nScript "+script+" does not have extension .py")
+    if os.path.splitext(G2script)[1].lower() != '.py':
+        print(f"\nScript {G2script!r} does not have extension .py")
         Usage()
-    projectname = os.path.split(project)[1]
-    if os.path.split(project)[0] != '':
-        appPath = os.path.abspath(project+".app")
-    else:
-        appPath = os.path.abspath(os.path.join(path2GSAS,project+".app"))
+    if not os.path.exists(installLoc):
+        print(f"\nERROR: directory {installLoc!r} not found")
+        Usage()
+    tarLoc = os.path.join(path2GSAS,'install',"g2app.tar.gz")
+    if not os.path.exists(tarLoc):
+        print(f"\nERROR: file {tarLoc!r} not found")
+        Usage()
+    if pythonLoc is None:
+        pythonLoc = os.path.join(installLoc,'../bin',"python")
+        if not os.path.exists(pythonLoc):
+            pythonLoc = sys.executable
+    if not os.path.exists(pythonLoc):
+        print(f"\nERROR: Python not found at {pythonLoc!r}")
+        Usage()
 
-# new approach, if possible use previously created file 
-if __name__ == '__main__' and sys.platform == "darwin" and os.path.exists(
-                os.path.join(path2GSAS,'inputs',"g2app.tar.gz")
-                ) and project =="GSAS-II":
-    if os.path.exists(os.path.join(path2GSAS,'../bin/python')):
-        print('found python, found g2app.tar.gz')
-        subprocess.call(["rm","-rf",appPath])
-        subprocess.call(["mkdir","-p",appPath])
-        subprocess.call(["tar","xzvf",os.path.join(path2GSAS,"g2app.tar.gz"),'-C',appPath])
-        # create a link named GSAS-II.py to the script
-        newScript = os.path.join(path2GSAS,'GSAS-II.py')
-        if os.path.exists(newScript): # cleanup
-            print("\nRemoving sym link",newScript)
-            os.remove(newScript)
-        os.symlink(os.path.split(script)[1],newScript)
-        print("\nCreated "+projectname+" app ("+str(appPath)+
-          ").\nViewing app in Finder so you can drag it to the dock if, you wish.")
-        subprocess.call(["open","-R",appPath])
-        sys.exit()
-    else:
-        print('found g2app.tar.gz, but python not in expected location')        
+    print(f'Using Python: {pythonLoc}')
+    print(f'Using GSAS-II script: {G2script}')
+    print(f'Install location: {installLoc}')
 
+    # files to be created
+    appName = os.path.abspath(os.path.join(installLoc,project+".app"))
+    g2Name = os.path.abspath(os.path.join(installLoc,project+'.py'))
+
+# new approach, use previously created tar (.tgz) file 
 if __name__ == '__main__' and sys.platform == "darwin":
+    if os.path.exists(appName):
+        print(f"\nRemoving old Mac app {appName!r}")
+        subprocess.call(["rm","-rf",appName])
+    subprocess.call(["mkdir","-p",appName])
+    subprocess.call(["tar","xzvf",tarLoc,'-C',appName])
+    # create a link named GSAS-II.py to the script
+    if os.path.exists(g2Name): # cleanup
+        print(f"\nRemoving sym link {g2Name!r}")
+        os.remove(g2Name)
+    os.symlink(G2script,g2Name)
+    if pythonLoc != os.path.join(installLoc,'../bin',"python"):
+        link = os.path.join(appName,'Contents','MacOS','GSAS-II')
+        try:
+            os.remove(link)
+            print(f"\nRemoved sym link {link!r}")
+        except FileNotFoundError:
+            pass
+        print(f"\nOverriding {link!r} with Python location {pythonLoc!r}")
+        os.symlink(pythonLoc,link)
+    print(f"\nCreated app {appName!r} and {g2Name!r}" +
+    "\nViewing app in Finder so you can drag it to the dock if, you wish.")
+    subprocess.call(["open","-R",appName])
+    
+    sys.exit()
+
+#if __name__ == '__main__' and sys.platform == "darwin":
+if False:
     iconfile = os.path.join(path2GSAS,'icons','gsas2.icns') # optional icon file
     if not os.path.exists(iconfile): # patch 3/2024 for svn dir organization
         iconfile = os.path.join(path2GSAS,'gsas2.icns') # optional icon file
@@ -198,8 +235,8 @@ end open
     if os.path.exists(newScript): # cleanup
         print("\nRemoving sym link",newScript)
         os.remove(newScript)
-    os.symlink(os.path.split(script)[1],newScript)
-    script=newScript
+    os.symlink(os.path.split(G2script)[1],newScript)
+    G2script=newScript
 
     # find Python used to run GSAS-II and set a new to use to call it
     # inside the app that will be created
@@ -215,7 +252,7 @@ end open
         
         shell = os.path.join("/tmp/","appscrpt.script")
         f = open(shell, "w")
-        f.write(AppleScript.format(newpython,script,'',newpython,script,''))
+        f.write(AppleScript.format(newpython,G2script,'',newpython,G2script,''))
         f.close()
 
         try: 
@@ -229,6 +266,18 @@ end open
         if pythonExe != newpython: os.symlink(pythonExe,newpython)
 
         # test if newpython can run wx
+        def RunPython(image,cmd):
+            'Run a command in a python image'
+            try:
+                err=None
+                p = subprocess.Popen([image,'-c',cmd],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                out = p.stdout.read()
+                err = p.stderr.read()
+                p.communicate()
+                return out,err
+            except Exception(err):
+                return '','Exception = '+err
+            
         testout,errout = RunPython(newpython,'import numpy; import wx; wx.App(); print("-"+"OK-")')
         if isinstance(testout,bytes): testout = testout.decode()
         if "-OK-" in testout:
