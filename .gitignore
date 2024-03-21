@@ -11,6 +11,11 @@ GSAS-II.py
 # created by gitstrap.py
 GSASII-bin
 
+# created by docs/build/conf.py
+version.rst
+vars.rst
+docs/build/
+
 # cruft from Python
 __pycache__
 

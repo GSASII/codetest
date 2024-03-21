@@ -13,7 +13,8 @@ def main():
     bracketRE = re.compile(r'\[|\]')
     # get parameter table
     G2obj.CompileVarDesc()
-    varstblloc = os.path.join(os.path.split(__file__)[0],'docs','source','vars.rst')
+    home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    varstblloc = os.path.join(home,'docs','source','vars.rst')
     print('creating file',os.path.normpath(varstblloc))
     fp = open(varstblloc,'w')
     fp.write('''.. 
