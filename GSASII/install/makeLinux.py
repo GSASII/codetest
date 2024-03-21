@@ -23,7 +23,6 @@ defined:
 
 The path to Python is determined from the version of Python used to 
 run this script.
-
 '''
 import sys, os, os.path, stat, shutil, subprocess, plistlib
 import datetime
@@ -32,7 +31,7 @@ desktop_template = """
 Version=1.0
 Type=Application
 Terminal=false
-Exec={} bash -c "{} {}"
+Exec={} bash -c "{}"
 Name=GSAS-II
 Icon={}
 Categories=Science;
@@ -62,7 +61,6 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
     print('GSAS-II installed at',path2GSAS2)
     print('GSASII.py at        ',G2script)
     print('GSASII icon at      ',G2icon)
-    print('GSASII.bat to be at ',G2bat)
 
     # make sure we have the stuff we need
     if not os.path.exists(G2script):
@@ -92,18 +90,19 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
 
     # create a script that activates conda Python and then starts GSAS-II
     # that would be run from a terminal
-    G2start = os.path.normpath(os.path.join(path2repo,'..','RunGSASII.sh'))
+    G2start = os.path.abspath(os.path.normpath(os.path.join(path2repo,'..','RunGSASII.sh')))
+    if os.path.exists(G2start): os.unlink(G2start)
     fp = open(G2start,'w')
-    fp.write('#!/bin/sh\n')
+    fp.write('#!/bin/bash\n')
     fp.write("# created by run of makeLinux.py on {:%d %b %Y %H:%M}\n".format(
         datetime.datetime.now()))
     activate = os.path.join(os.path.dirname(pythonexe),'activate')
-    if os.path.exists(activate): fp.write(f'{activate}\n')
+    if os.path.exists(activate): fp.write(f'source {activate}\n')
     fp.write(f'{pythonexe} {G2script} $*\n')
     fp.close()
+    os.chmod(G2start, # make the .py file executable and readable
+             stat.S_IXUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IXOTH)
 
-    # TODO: perhaps the below should call the file above rather than calling
-    # GSASII.py directly
     script = ''
     import shutil
     for term in ("lxterminal", "gnome-terminal", 'konsole', "xterm",
@@ -154,7 +153,7 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
         try:
             open(f,'w').write(desktop_template.format(
                 terminal,
-                sys.executable,G2script+add2script,G2icon))
+                G2start+add2script,G2icon))
             os.chmod(
                 dfile,
                 stat.S_IWUSR | stat.S_IXUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IXOTH)
@@ -166,11 +165,33 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
 
     # now create a script that opens GSAS-II in a window
     G2startterm = os.path.normpath(os.path.join(path2repo,'..','RunG2inTerm.sh'))
+    if os.path.exists(G2startterm): os.unlink(G2startterm)
     fp = open(G2startterm,'w')
-    fp.write('#!/bin/sh\n')
+    fp.write('#!/bin/bash\n')
     fp.write("# created by run of makeLinux.py on {:%d %b %Y %H:%M}\n".format(
         datetime.datetime.now()))
-    if os.path.exists(activate): fp.write(f'{activate}\n')
-    fp.write(f'{terminal} {G2startterm}\n')
+    if os.path.exists(activate): fp.write(f'source {activate}\n')
+    fp.write(f'{terminal} {G2start}\n')
     if os.path.exists(script): fp.write(f'{script}\n')
     fp.close()
+    os.chmod(G2startterm, stat.S_IWUSR | stat.S_IXUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IXOTH)
+
+    # Finally, create a script to reset GSAS-II, dropping any local
+    # changes and downloading the latest version
+    gitstrap = os.path.abspath(
+        os.path.normpath(os.path.join(path2repo,'..','gitstrap.py')))
+    if not os.path.exists:
+        print(f'the installation script was not found: {gitstrap!r}')
+    else:
+        G2reset = os.path.normpath(os.path.join(path2repo,'..','Reset2FreshGSASII.sh'))
+        if os.path.exists(G2reset): os.unlink(G2reset)
+        fp = open(G2reset,'w')
+        fp.write('#!/bin/bash\n')
+        fp.write("# created by run of makeLinux.py on {:%d %b %Y %H:%M}\n".format(
+            datetime.datetime.now()))
+        if os.path.exists(activate): fp.write(f'source {activate}\n')
+        fp.write('read -p "Reset any local changes and install latest GSAS-II version? (Y/[N]): " confirm\n[[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1\n')
+        fp.write(f'{pythonexe} {gitstrap} --reset\n')
+        fp.close()
+        os.chmod(G2reset, stat.S_IWUSR | stat.S_IXUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IXOTH)
+        print(f'Created {G2reset!r} to reset GSAS-II installation when all else fails...')

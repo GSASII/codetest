@@ -1,3 +1,4 @@
+# creates Windows files to aid in running GSAS-II
 '''
 This script creates a file named ``RunGSASII.bat`` and a desktop shortcut to that file.
 It registers the filetype .gpx so that the GSAS-II project files exhibit the
@@ -18,12 +19,6 @@ defined:
 The path to Python is determined from the version of Python used to 
 run this script.
 '''
-from __future__ import division, print_function
-version = "$Id: makeBat.py 5750 2024-03-04 19:37:23Z toby $"
-# creates Windows files to aid in running GSAS-II
-#   creates RunGSASII.bat and a desktop shortcut to that file
-#   registers the filetype .gpx so that the GSAS-II project files exhibit the
-#     GSAS-II icon and so that double-clicking on them opens them in GSAS-II
 #
 import os, sys
 import datetime
@@ -75,7 +70,7 @@ if __name__ == '__main__':
     print('GSAS-II installed at',path2GSAS2)
     print('GSASII.py at        ',G2script)
     print('GSASII icon at      ',G2icon)
-    print('GSASII.bat to be at ',G2bat)
+    print('.bat file to be at  ',G2bat)
 
     # create a GSAS-II script
     fp = open(G2bat,'w')
@@ -103,6 +98,31 @@ if __name__ == '__main__':
     fp.close()
     print(f'\nCreated GSAS-II batch file {G2bat}')
     
+    # create a reset script
+    gitstrap = os.path.abspath(
+        os.path.normpath(os.path.join(path2repo,'..','gitstrap.py')))
+    if not os.path.exists:
+        print(f'the installation script was not found: {gitstrap!r}')
+    else:
+        G2reset = os.path.normpath(os.path.join(path2repo,'..','Reset2FreshGSASII.bat'))
+        fp = open(G2reset,'w')
+        fp.write("@REM created by run of makeBat.py on {:%d %b %Y %H:%M}\n".format(
+            datetime.datetime.now()))
+        fp.write("REM This script will reset GSAS-II to the latest version, even if the program can't be started\n")
+        pexe = pythonexe
+        if ' ' in pythonexe: pexe = '"'+pythonexe+'"'
+        G2s = gitstrap
+        if ' ' in G2s: G2s = '"'+gitstrap+'"'
+        if activate: fp.write(f"{activate}")
+        fp.write('choice /c yn /n /m "Reset any local changes and install latest GSAS-II version? (y/n)"\n')
+        fp.write(f"goto %ERRORLEVEL%\n")
+        fp.write(f":1\n")
+        fp.write(f"{pexe} {G2s} --reset\n")
+        fp.write(f":2\n")
+        fp.write(f"pause\n")
+        fp.close()
+        print(f'\nCreated GSAS-II reset script {G2reset}')
+
     new = False
     oldBat = ''
     # this code does not appear to work properly when paths have spaces
