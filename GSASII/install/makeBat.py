@@ -4,10 +4,19 @@ It registers the filetype .gpx so that the GSAS-II project files exhibit the
 GSAS-II icon and so that double-clicking on them opens them in GSAS-II. 
 
 Run this script with no arguments; the path to the ``GSASII.py`` file
-is assumed to be the the same as the path to the ``makeBat.py`` file
-and the path to Python is determined from the version of Python
-used to run this script. 
+is assumed to be in the parent directory to the one where this file 
+(``makeBat.py``) is found.
 
+The contents of this file may also be run from inside the gitstrap.py
+installation script. In that case, the following variables are already 
+defined: 
+
+  * path2GSAS2   is the directory with all GSAS-II Python code
+  * G2script     has the location of the GSASII.py file
+  * path2repo    is the location of the GSAS-II git repository
+
+The path to Python is determined from the version of Python used to 
+run this script.
 '''
 from __future__ import division, print_function
 version = "$Id: makeBat.py 5750 2024-03-04 19:37:23Z toby $"
@@ -50,38 +59,27 @@ if __name__ == '__main__':
     if __file__.lower().endswith("makebat.py"):
         print(f"running from file {__file__!r}")
         invokedDirectly = True
+        path2GSAS2 = os.path.dirname(os.path.dirname(__file__))
+        path2repo = os.path.dirname(path2GSAS2)
+        G2script = os.path.join(path2GSAS2,'GSASII.py')
     else:
         print(f"running makeBat.py indirectly inside {__file__!r}")
         invokedDirectly = False
 
-    gsaspath = os.path.dirname(__file__)
-    if not gsaspath: gsaspath = os.path.curdir
-    gsaspath = os.path.abspath(os.path.expanduser(gsaspath))
-    G2script = os.path.join(gsaspath,'GSASII.py')
-    # when invoked from gitstrap.py, __file__ will appear in the wrong directory
-    if not os.path.exists(G2script):
-        gsaspath = os.path.join(gsaspath,'GSASII')
-        G2script = os.path.join(gsaspath,'GSASII.py')
-        print(f'patching gsaspath to {gsaspath}')
-    #
-    # Hmmm, perhaps we should not create these files in the GSASII directory, which is "owned" by git
-    # TODO: maybe address in the future
-    #
-    G2bat = os.path.join(gsaspath,'RunGSASII.bat')
-    G2icon = os.path.join(gsaspath,'icons','gsas2.ico')
-    if not os.path.exists(G2icon):  # patch 3/2024 for svn dir organization
-        G2icon = os.path.join(gsaspath,'gsas2.ico')
+    G2icon = os.path.join(path2GSAS2,'icons','gsas2.ico')
+    # create the .BAT file below the git directory, where gitstrap is located
+    G2bat = os.path.normpath(os.path.join(path2repo,'..','RunGSASII.bat'))
     pythonexe = os.path.realpath(sys.executable)
-    print('Python installed at',pythonexe)
-    print('GSAS-II installed at',gsaspath)
-    # Bob reports a problem using pythonw.exe w/Canopy on Windows, so change that if used
-    if pythonexe.lower().endswith('pythonw.exe'):
-        print("  using python.exe rather than "+pythonexe)
-        pythonexe = os.path.join(os.path.split(pythonexe)[0],'python.exe')
-        print("  now pythonexe="+pythonexe)
+
+    print('Python installed at ',pythonexe)
+    print('GSAS-II installed at',path2GSAS2)
+    print('GSASII.py at        ',G2script)
+    print('GSASII icon at      ',G2icon)
+    print('GSASII.bat to be at ',G2bat)
+
     # create a GSAS-II script
     fp = open(G2bat,'w')
-    fp.write("@REM created by run of bootstrap.py on {:%d %b %Y %H:%M}\n".format(
+    fp.write("@REM created by run of makeBat.py on {:%d %b %Y %H:%M}\n".format(
         datetime.datetime.now()))
     activate = os.path.join(os.path.split(pythonexe)[0],'Scripts','activate')
     print("Looking for",activate)
@@ -103,7 +101,7 @@ if __name__ == '__main__':
     if ' ' in G2s: G2s = '"'+G2script+'"'
     fp.write(Script.format(activate,pexe,G2s))
     fp.close()
-    print('\nCreated GSAS-II batch file RunGSASII.bat in '+gsaspath)
+    print(f'\nCreated GSAS-II batch file {G2bat}')
     
     new = False
     oldBat = ''
@@ -119,7 +117,7 @@ if __name__ == '__main__':
         os.stat(oldBat)     #check if it is still around
     except FileNotFoundError:
         if oldBat:
-            print('old GPX assignment',oldBat, 'not found; registry entry will be made for new one')
+            print(f'old GPX assignment {oldBat} not found; registry entry will be made for new one')
         new = True
     except NameError:
         pass
@@ -137,7 +135,7 @@ if __name__ == '__main__':
                 dlg.Destroy()
         finally:
             pass
-    elif not invokedDirectly:  # force if we can't ask
+    elif not invokedDirectly:  # force a choice, since we can't ask
         new = True
     if new:
         # Associate a script and icon with .gpx files
@@ -165,7 +163,7 @@ if __name__ == '__main__':
         win32com.shell.shell.SHChangeNotify(
             win32com.shell.shellcon.SHCNE_ASSOCCHANGED, 0, None, None)
     except ImportError:
-        print('Module pywin32 not present, login again to see file types properly')
+        print('Module pywin32 not present, .gpx files will display properly after logging in again')
     except:
         print('Unexpected error on explorer refresh.')
         import traceback
@@ -197,7 +195,7 @@ if __name__ == '__main__':
                     dlg.Destroy()
             else:
                 # set an installation location
-                distdir = os.path.split(os.path.dirname(gsaspath))[1]
+                distdir = os.path.split(os.path.dirname(path2GSAS2))[1]
                 if distdir == '\\' or distdir == '': distdir = '/'
                 shortbase = f"GSAS-II from {distdir}.lnk"
                 shortcut = os.path.join(desktop, shortbase)

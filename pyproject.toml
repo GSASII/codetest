@@ -47,6 +47,7 @@ misc = [
   "h5py",
   "hdf5",
   "imageio",
+]
 web = [
   "conda",
   "requests",
