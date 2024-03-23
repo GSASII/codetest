@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
 ########### SVN repository information ###################
-# $Date: 2024-03-14 17:00:16 -0500 (Thu, 14 Mar 2024) $
+# $Date: 2024-03-17 12:50:24 -0500 (Sun, 17 Mar 2024) $
 # $Author: toby $
-# $Revision: 5766 $
+# $Revision: 5767 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5766 2024-03-14 22:00:16Z toby $
+# $Id: GSASIIpath.py 5767 2024-03-17 17:50:24Z toby $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
@@ -40,6 +40,14 @@ except:
     print('Python requests package not installed (required for GSAS-II\n'+
           'to install/update from git)')
 
+# hard-coded github repo locations
+#G2binURL = "https://api.github.com/repos/AdvancedPhotonSource/GSASIIbuildtools"
+G2binURL = "https://api.github.com/repos/GSASII/GSASIIbuildtools"
+#g2URL = "https://github.com/AdvancedPhotonSource/GSAS-II.git"
+g2URL = "https://github.com/GSASII/codetest.git"
+# tutorial repo owner & Repo name
+#gitTutorialOwn,gitTutorialRepo = 'AdvancedPhotonSource', 'GSASIITutorials'
+gitTutorialOwn,gitTutorialRepo = 'GSASII', 'GSASIITutorials'
     
 path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__))) # location of this file; save before any changes in pwd
 
@@ -99,10 +107,10 @@ version = -1
 def SetVersionNumber(RevString):
     '''Set the subversion (svn) version number
 
-    :param str RevString: something like "$Revision: 5766 $"
+    :param str RevString: something like "$Revision: 5767 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5766 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5767 $")`` in every python
     file.
     '''
     try:
@@ -334,11 +342,6 @@ def getG2VersionInfo():
 #==============================================================================
 #==============================================================================
 # routines to interface with git.
-# next lines define where GitHub repositories are found
-#g2URL = "https://github.com/AdvancedPhotonSource/GSASII-copy.git"
-g2URL = "https://github.com/GSASII/codetest.git"
-G2binURL = "https://api.github.com/repos/GSASII/binarytest"
-gitOwner,gitRepo = 'GSASII', 'TutorialTest'
 
 BASE_HEADER = {'Accept': 'application/vnd.github+json',
                'X-GitHub-Api-Version': '2022-11-28'}
@@ -757,6 +760,7 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
         for f in tarobj.getmembers(): # loop over files in repository
             # do a bit of sanity checking for safety. Don't install anything
             #  unless it goes into in the specified directory
+            if sys.platform == "win32" and f.name.startswith('._'): continue # clean up Mac cruft for Windows
             if '/' in f.name or '\\' in f.name:
                 print(f'skipping file {f.name} -- path alteration not allowed')
                 continue
@@ -796,7 +800,7 @@ def gitStartUpdate(cmdopts):
     if sys.platform != "win32": proc.wait()
     sys.exit()
 
-def dirGitHub(dirlist,orgName=gitOwner, repoName=gitRepo):
+def dirGitHub(dirlist,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
     '''Obtain a the contents of a GitHub repository directory using 
     the GitHub REST API.
 
@@ -828,7 +832,7 @@ def dirGitHub(dirlist,orgName=gitOwner, repoName=gitRepo):
     except:
         return None
 
-def rawGitHubURL(dirlist,filename,orgName=gitOwner, repoName=gitRepo,
+def rawGitHubURL(dirlist,filename,orgName=gitTutorialOwn, repoName=gitTutorialRepo,
                  branchname="master"):
     '''Create a link that can be used to view/downlaod the raw version of 
     file in a GitHub repository. 
@@ -851,7 +855,7 @@ def rawGitHubURL(dirlist,filename,orgName=gitOwner, repoName=gitRepo,
         #filename = urllib.parse.quote(filename)
     return f"https://raw.githubusercontent.com/{orgName}/{repoName}/{branchname}/{dirname}{filename}"
 
-def downloadDirContents(dirlist,targetDir,orgName=gitOwner, repoName=gitRepo):
+def downloadDirContents(dirlist,targetDir,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
     filList = dirGitHub(dirlist, orgName=orgName, repoName=repoName)
     if filList is None:
         print(f'Directory {"/".join(dirlist)!r} does not have any files')
