@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
 ########### SVN repository information ###################
-# $Date: 2024-03-17 12:50:24 -0500 (Sun, 17 Mar 2024) $
+# $Date: 2024-03-23 16:24:25 -0500 (Sat, 23 Mar 2024) $
 # $Author: toby $
-# $Revision: 5767 $
+# $Revision: 5769 $
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIpath.py $
-# $Id: GSASIIpath.py 5767 2024-03-17 17:50:24Z toby $
+# $Id: GSASIIpath.py 5769 2024-03-23 21:24:25Z toby $
 ########### SVN repository information ###################
 '''
 :mod:`GSASIIpath` Classes & routines follow
@@ -107,10 +107,10 @@ version = -1
 def SetVersionNumber(RevString):
     '''Set the subversion (svn) version number
 
-    :param str RevString: something like "$Revision: 5767 $"
+    :param str RevString: something like "$Revision: 5769 $"
       that is set by subversion when the file is retrieved from subversion.
 
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5767 $")`` in every python
+    Place ``GSASIIpath.SetVersionNumber("$Revision: 5769 $")`` in every python
     file.
     '''
     try:
@@ -448,11 +448,15 @@ def gitTestGSASII(verbose=True,g2repo=None):
         if not os.path.exists(path2GSAS2): 
             if verbose: print(f'Warning: Directory {path2GSAS2} not found')
             return -1
-        if not os.path.exists(os.path.join(path2GSAS2,'.git')): 
+        if os.path.exists(os.path.join(path2GSAS2,'..','.git')):
+            path2repo = os.path.join(path2GSAS2,'..')  # expected location
+        elif os.path.exists(os.path.join(path2GSAS2,'.git')):
+            path2repo = path2GSAS2
+        else:
             if verbose: print(f'Warning: Repository {path2GSAS2} not found')
             return -2
         try:
-            g2repo = openGitRepo(path2GSAS2)
+            g2repo = openGitRepo(path2repo)
         except Exception as msg:
             if verbose: print(f'Warning: Failed to open repository. Error: {msg}')
             return -3
