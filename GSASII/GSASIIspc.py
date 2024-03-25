@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
+# $Date: 2024-03-22 11:53:23 -0500 (Fri, 22 Mar 2024) $
+# $Author: vondreele $
+# $Revision: 5768 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIspc.py $
+# $Id: GSASIIspc.py 5768 2024-03-22 16:53:23Z vondreele $
 ########### SVN repository information ###################
 ''':mod:`GSASIIspc` Classes & routines follow
 '''
@@ -17,7 +17,7 @@ import copy
 import os.path as ospath
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision$")
+GSASIIpath.SetVersionNumber("$Revision: 5768 $")
 
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
@@ -3523,7 +3523,7 @@ def MagSytSym(SytSym,dupDir,SGData):
     elif '23' in SytSym:
         ops = {'':['2(x)','3(111)']}
     elif 'm3' in SytSym:
-        ops = {'(100)':['(+-0)',],'(+--)':[],'(-+-)':[],'(--+)':[]}
+        ops = {'':['m(x)','3(111)',]}
     elif '3m' in SytSym:
         ops = {'(111)':['3(111)','m(+-0)',],'(+--)':['3(+--)','m(0+-)',],
                '(-+-)':['3(-+-)','m(+0-)',],'(--+)':['3(--+)','m(+-0)',],
